@@ -59,29 +59,8 @@ Code
 ## 🏛️ System Architecture
 
 The application is engineered strictly with native web platform standards:
-┌────────────────────────────────────────────────────────┐
-│ App Shell (PWA) │
-│ index.html (Semantic UI, Scrivener/Notion Theme) │
-└──────────┬─────────────────────────────────┬───────────┘
-│ │
-▼ ▼
-┌──────────────────────┐ ┌──────────────────────┐
-│ service-worker.js │ │ manifest.json │
-│ Cache-First Shell │ │ Desktop & Mobile │
-│ Offline Revalidate │ │ Standalone Install │
-└──────────────────────┘ └──────────────────────┘
-│
-▼
-┌────────────────────────────────────────────────────────┐
-│ Vanilla JS Reactive Store │
-│ • AppState Model (Meta, Cast, Plots, Scenes, World) │
-│ • HTML5 2D Canvas Interactive Graph Vector Engine │
-│ • HTML5 Drag-and-Drop Column/Card Order Controller │
-│ • LocalStorage Auto-Sync & Rolling Snapshots (5x) │
-└────────────────────────────────────────────────────────┘
-code
-Code
----
+
+<img width="1536" height="1024" alt="Designer (21)" src="https://github.com/user-attachments/assets/d5c29d61-69b0-4e30-9d6a-68e41a79d152" />
 
 ## 🔍 Module Breakdown
 
