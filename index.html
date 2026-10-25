@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Story Development Studio by Subin Khullar</title>
+  <meta name="description" content="Offline-first deterministic rule-based story development studio and narrative workbench.">
+  <meta name="theme-color" content="#1e1e24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StoryStudio">
+
+  <!-- Manifest Reference -->
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ==========================================================================
+       CSS Custom Properties & Design Tokens
+       ========================================================================== */
+    :root {
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-reading: "Georgia", "Cambria", "Times New Roman", serif;
+      --font-screenplay: "Courier New", Courier, monospace;
+      --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      /* Dark Theme (Default) */
+      --bg-base: #121216;
+      --bg-surface: #1a1a22;
+      --bg-panel: #22222d;
+      --bg-hover: #2d2d3c;
+      --bg-active: #37374a;
+      --border-color: #323242;
+      --border-accent: #4a4a60;
+
+      --text-main: #f0f0f5;
+      --text-muted: #9595a8;
+      --text-dim: #656578;
+
+      --accent: #d4af37;
+      --accent-bright: #f3ca40;
+      --accent-glow: rgba(212, 175, 55, 0.25);
+      --accent-contrast: #121216;
+
+      --danger: #e63946;
+      --warning: #f4a261;
+      --success: #2a9d8f;
+      --info: #457b9d;
+
+      --sidebar-width: 270px;
+      --header-height: 56px;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.25s ease;
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f4f4f7;
+      --bg-surface: #ffffff;
+      --bg-panel: #eaebee;
+      --bg-hover: #dcdee3;
+      --bg-active: #d0d2d9;
+      --border-color: #d1d3db;
+      --border-accent: #b0b3c2;
+
+      --text-main: #1d1d24;
+      --text-muted: #5e606e;
+      --text-dim: #8b8e9f;
+
+      --accent: #a37d14;
+      --accent-bright: #c49618;
+      --accent-glow: rgba(163, 125, 20, 0.15);
+      --accent-contrast: #ffffff;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 10px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; font-family: var(--font-ui); background: var(--bg-base); color: var(--text-main); font-size: 14px; line-height: 1.5; }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    header#top-bar {
+      height: var(--header-height);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .save-indicator {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 8px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-panel);
+    }
+    .save-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+      transition: background 0.3s;
+    }
+    .save-dot.unsaved { background: var(--warning); }
+
+    #workspace-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - var(--header-height));
+      overflow: hidden;
+      position: relative;
+    }
+
+    nav#sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width var(--transition-normal), transform var(--transition-normal);
+      overflow-y: auto;
+      z-index: 90;
+    }
+
+    nav#sidebar.collapsed { width: 60px; }
+
+    .nav-section-title {
+      padding: 12px 16px 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    nav#sidebar.collapsed .nav-section-title { display: none; }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast);
+      position: relative;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    .nav-btn.active {
+      background: var(--bg-panel);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .nav-btn.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .nav-icon {
+      font-size: 1.15rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .nav-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity var(--transition-fast);
+    }
+    nav#sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; }
+
+    main#stage {
+      flex: 1;
+      background: var(--bg-base);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .stage-pane {
+      display: none;
+      padding: 2rem;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+      animation: fadeIn 0.18s ease forwards;
+    }
+
+    .stage-pane.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pane-header {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .pane-header h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .pane-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+    @media (max-width: 1024px) {
+      .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      nav#sidebar { position: absolute; left: 0; top: 0; bottom: 0; box-shadow: var(--shadow-lg); transform: translateX(-100%); }
+      nav#sidebar.mobile-open { transform: translateX(0); }
+      .stage-pane { padding: 1rem; }
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .card:hover { border-color: var(--border-accent); }
+
+    .card-header {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-main);
+    }
+
+    .form-group { margin-bottom: 1.1rem; }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 85px;
+      line-height: 1.5;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--bg-panel);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all var(--transition-fast);
+    }
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-accent);
+    }
+    .btn:active {
+      background: var(--bg-active);
+      transform: translateY(1px);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      background: var(--accent-bright);
+      border-color: var(--accent-bright);
+    }
+    .btn-danger {
+      background: rgba(230, 57, 70, 0.15);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-sm { padding: 4px 8px; font-size: 0.78rem; }
+    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: var(--bg-panel);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+    .tag-accent { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+    .tag-danger { background: rgba(230, 57, 70, 0.15); color: var(--danger); border-color: var(--danger); }
+    .tag-success { background: rgba(42, 157, 143, 0.15); color: var(--success); border-color: var(--success); }
+
+    .scene-column {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: background var(--transition-fast);
+    }
+    .scene-column.drag-over {
+      background: var(--bg-panel);
+      border-color: var(--accent);
+    }
+
+    .scene-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      cursor: grab;
+      user-select: none;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+    .scene-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+    }
+    .scene-card.dragging {
+      opacity: 0.4;
+      cursor: grabbing;
+      transform: scale(0.98);
+    }
+    .scene-card-header {
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .scene-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    #relation-canvas-container {
+      width: 100%;
+      height: 520px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      position: relative;
+      overflow: hidden;
+    }
+    #relation-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+    .canvas-overlay-legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(18, 18, 22, 0.85);
+      backdrop-filter: blur(4px);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .timeline-strip {
+      position: relative;
+      padding: 24px 0 24px 32px;
+      border-left: 2px solid var(--border-accent);
+      margin-left: 16px;
+    }
+    .timeline-node {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .timeline-node::before {
+      content: '';
+      position: absolute;
+      left: -39px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--bg-base);
+    }
+    .timeline-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+    }
+
+    .issue-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-surface);
+      border-left: 4px solid var(--warning);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin-bottom: 10px;
+    }
+    .issue-item.error { border-left-color: var(--danger); }
+    .issue-item.good { border-left-color: var(--success); }
+
+    .reader-sheet {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 3rem 4rem;
+      margin: 0 auto;
+      max-width: 820px;
+      box-shadow: var(--shadow-md);
+      min-height: 600px;
+    }
+    .reading-mode-novel {
+      font-family: var(--font-reading);
+      font-size: 1.15rem;
+      line-height: 1.8;
+      color: var(--text-main);
+    }
+    .reading-mode-novel h1 { font-size: 2.2rem; text-align: center; margin-bottom: 1.5rem; }
+    .reading-mode-novel h2 { font-size: 1.5rem; margin: 2rem 0 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+    .reading-mode-novel p { margin-bottom: 1.25rem; text-indent: 1.5rem; }
+
+    .reading-mode-screenplay {
+      font-family: var(--font-screenplay);
+      font-size: 0.95rem;
+      line-height: 1.4;
+      letter-spacing: 0.02em;
+    }
+    .reading-mode-screenplay .slugline { font-weight: bold; margin: 1.5rem 0 0.5rem; text-transform: uppercase; }
+    .reading-mode-screenplay .action { margin-bottom: 1rem; }
+    .reading-mode-screenplay .character-cue { text-align: center; margin-top: 1rem; font-weight: bold; text-transform: uppercase; width: 60%; margin-left: 20%; }
+    .reading-mode-screenplay .dialogue { width: 60%; margin: 0 auto 1rem; }
+    .reading-mode-screenplay .parenthetical { text-align: center; width: 50%; margin: 0 auto; font-style: italic; }
+
+    .reading-mode-children {
+      font-family: var(--font-ui);
+      font-size: 1.3rem;
+      line-height: 2;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+    .reading-mode-children h1 { font-size: 2.4rem; color: var(--accent); margin-bottom: 2rem; }
+    .reading-mode-children p { margin-bottom: 2rem; font-weight: 500; }
+
+    .stat-metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-metric-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 8px 0;
+      font-family: var(--font-mono);
+    }
+    .stat-metric-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 1rem;
+    }
+    .modal-header h3 { font-size: 1.2rem; color: var(--text-main); }
+    .close-btn { background: transparent; border: none; font-size: 1.3rem; color: var(--text-muted); cursor: pointer; }
+    .close-btn:hover { color: var(--text-main); }
+
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--bg-panel);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent);
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      font-size: 0.88rem;
+      animation: toastIn 0.25s ease forwards;
+      pointer-events: auto;
+      max-width: 340px;
+    }
+    @keyframes toastIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+
+  <div id="app-container">
+    <header id="top-bar">
+      <div class="brand-group">
+        <button id="toggle-sidebar-btn" class="btn btn-sm" title="Toggle Sidebar">☰</button>
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <div>
+          <div class="brand-title">Story Development Studio</div>
+          <div class="brand-subtitle">by Subin Khullar</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="save-indicator">
+          <span class="save-dot" id="save-dot"></span>
+          <span id="save-label">Saved</span>
+        </div>
+        <button id="theme-toggle-btn" class="btn btn-sm" title="Switch Light/Dark Mode">🌓 Theme</button>
+        <button id="backup-btn" class="btn btn-sm" title="Quick Snapshot / Backup">💾 Backup</button>
+        <button id="install-pwa-btn" class="btn btn-sm btn-primary" style="display:none;" title="Install Desktop App">📥 Install App</button>
+      </div>
+    </header>
+
+    <div id="workspace-body">
+      <nav id="sidebar">
+        <div class="nav-section-title">Core Foundation</div>
+        <button class="nav-btn active" data-pane="pane-metadata"><span class="nav-icon">📖</span><span class="nav-label">Story Metadata</span></button>
+        <button class="nav-btn" data-pane="pane-premise"><span class="nav-icon">💡</span><span class="nav-label">Story Premise & Theme</span></button>
+        <button class="nav-btn" data-pane="pane-world"><span class="nav-icon">🌍</span><span class="nav-label">World Builder</span></button>
+
+        <div class="nav-section-title">Cast & Narrative Flow</div>
+        <button class="nav-btn" data-pane="pane-characters"><span class="nav-icon">👤</span><span class="nav-label">Character Manager</span></button>
+        <button class="nav-btn" data-pane="pane-plot"><span class="nav-icon">⚡</span><span class="nav-label">Plot & Conflict Engine</span></button>
+        <button class="nav-btn" data-pane="pane-structure"><span class="nav-icon">🏛️</span><span class="nav-label">Structure Frameworks</span></button>
+        <button class="nav-btn" data-pane="pane-scenes"><span class="nav-icon">🗂️</span><span class="nav-label">Scene Board</span></button>
+        <button class="nav-btn" data-pane="pane-timeline"><span class="nav-icon">⏱️</span><span class="nav-label">Chronological Timeline</span></button>
+        <button class="nav-btn" data-pane="pane-graph"><span class="nav-icon">🕸️</span><span class="nav-label">Relationship Graph</span></button>
+
+        <div class="nav-section-title">Generation & Intelligence</div>
+        <button class="nav-btn" data-pane="pane-consistency"><span class="nav-icon">🔍</span><span class="nav-label">Consistency Checker</span></button>
+        <button class="nav-btn" data-pane="pane-generator"><span class="nav-icon">⚙️</span><span class="nav-label">Narrative Generator</span></button>
+        <button class="nav-btn" data-pane="pane-variants"><span class="nav-icon">🔀</span><span class="nav-label">Ending & Story Variants</span></button>
+        <button class="nav-btn" data-pane="pane-reader"><span class="nav-icon">📚</span><span class="nav-label">Reading Room</span></button>
+        <button class="nav-btn" data-pane="pane-research"><span class="nav-icon">🔬</span><span class="nav-label">Research Assistant</span></button>
+        <button class="nav-btn" data-pane="pane-analytics"><span class="nav-icon">📊</span><span class="nav-label">Analytics Dashboard</span></button>
+        <button class="nav-btn" data-pane="pane-io"><span class="nav-icon">📦</span><span class="nav-label">Import / Export Suite</span></button>
+      </nav>
+
+      <main id="stage">
+        <!-- Module A: Metadata -->
+        <section id="pane-metadata" class="stage-pane active">
+          <div class="pane-header">
+            <div>
+              <h2>Module A: Story Metadata</h2>
+              <p>Configure project high-level parameters and parameters driving rule engines.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.saveCurrentProject(true)">Save Changes</button>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="form-group">
+                <label>Story Title</label>
+                <input type="text" id="meta-title" placeholder="e.g. The Chronos Engine">
+              </div>
+              <div class="form-group">
+                <label>Genre</label>
+                <select id="meta-genre">
+                  <option value="Science Fiction">Science Fiction</option>
+                  <option value="High Fantasy">High Fantasy</option>
+                  <option value="Mystery / Noir">Mystery / Noir</option>
+                  <option value="Psychological Thriller">Psychological Thriller</option>
+                  <option value="Gothic Horror">Gothic Horror</option>
+                  <option value="Romantic Drama">Romantic Drama</option>
+                  <option value="Cyberpunk">Cyberpunk</option>
+                  <option value="Historical Fiction">Historical Fiction</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Target Audience</label>
+                <select id="meta-audience">
+                  <option value="Young Adult (YA)">Young Adult (YA)</option>
+                  <option value="Adult Commercial">Adult Commercial</option>
+                  <option value="Literary Adult">Literary Adult</option>
+                  <option value="Middle Grade">Middle Grade</option>
+                  <option value="Children 5-8">Children 5-8</option>
+                </select>
+              </div>
+            </div>
+            <div class="card">
+              <div class="form-group">
+                <label>Narrative Tone</label>
+                <select id="meta-tone">
+                  <option value="Dark & Gritty">Dark & Gritty</option>
+                  <option value="Heroic & Mythic">Heroic & Mythic</option>
+                  <option value="Satirical & Witty">Satirical & Witty</option>
+                  <option value="Poetic & Melancholic">Poetic & Melancholic</option>
+                  <option value="Whimsical & Playful">Whimsical & Playful</option>
+                  <option value="Suspenseful & Urgent">Suspenseful & Urgent</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Writing Style / Voice</label>
+                <select id="meta-style">
+                  <option value="Third-Person Limited (Deep POV)">Third-Person Limited (Deep POV)</option>
+                  <option value="Third-Person Omniscient">Third-Person Omniscient</option>
+                  <option value="First-Person Intimate">First-Person Intimate</option>
+                  <option value="Hardboiled Screenplay Voice">Hardboiled Screenplay Voice</option>
+                  <option value="Lyrical Fairy Tale">Lyrical Fairy Tale</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Target Word Count</label>
+                <input type="number" id="meta-wordcount" value="80000" step="5000">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module B: Premise -->
+        <section id="pane-premise" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module B: Story Premise & Thematic Anchor</h2>
+              <p>Define the core conflict, moral dilemma, and governing stakes.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="form-group">
+              <label>Logline / Core Premise</label>
+              <textarea id="premise-logline" placeholder="When a rogue archivist discovers an ancient celestial clock, she must decipher its encrypted mechanism before an imperial syndicate rewires history."></textarea>
+            </div>
+            <div class="grid-3">
+              <div class="form-group">
+                <label>Central Theme</label>
+                <input type="text" id="premise-theme" placeholder="e.g. Memory vs. Truth">
+              </div>
+              <div class="form-group">
+                <label>Dramatic Central Question</label>
+                <input type="text" id="premise-question" placeholder="e.g. Can fate be unwritten without destroying identity?">
+              </div>
+              <div class="form-group">
+                <label>High Stakes</label>
+                <input type="text" id="premise-stakes" placeholder="e.g. Complete erasure of free thought across the territories.">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module C: World Builder -->
+        <section id="pane-world" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module C: World Builder</h2>
+              <p>Rule-based environment, geopolitical factions, and governing logic.</p>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">Setting & Environment</div>
+              <div class="form-group">
+                <label>Primary Setting / Geography</label>
+                <input type="text" id="world-setting" placeholder="e.g. New Veridia, a subterranean bio-dome city">
+              </div>
+              <div class="form-group">
+                <label>Era / Time Period</label>
+                <input type="text" id="world-period" placeholder="e.g. Post-Collapse 2340 / Neo-Victorian">
+              </div>
+              <div class="form-group">
+                <label>Technology Level</label>
+                <input type="text" id="world-tech" placeholder="e.g. Steam-pneumatic quantum relays, ether lamps">
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">Magic, Factions & World Laws</div>
+              <div class="form-group">
+                <label>Magic / Physics Rule System</label>
+                <textarea id="world-magic" placeholder="e.g. Sympathetic Resonancy: Every kinetic spell requires an equal exchange of human memory."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Key Factions & Power Guilds</label>
+                <textarea id="world-factions" placeholder="e.g. The Iron Synod, The Weavers of Dawn, Ash Traders"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Immutable World Rules / Taboos</label>
+                <textarea id="world-rules" placeholder="e.g. 1. No chronomancy past the horizon line. 2. Synthetic blood must be registered."></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module D: Character Manager -->
+        <section id="pane-characters" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module D: Character Manager</h2>
+              <p>Track character psychological profiles, fatal flaws, and relational vectors.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.openCharacterModal()">+ Add New Character</button>
+          </div>
+          <div id="character-list" class="grid-3"></div>
+        </section>
+
+        <!-- Module E: Plot Builder -->
+        <section id="pane-plot" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module E: Plot Builder & Conflict Engine</h2>
+              <p>Multi-track plot threads, critical twists, and the deterministic conflict engine.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.openPlotModal()">+ Add Plot Line</button>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">Main Plot & Subplots</div>
+              <div id="plot-threads-container"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">Conflict & Complication Engine</div>
+              <p class="scene-meta">Rule-driven engine calculates dramatic pressure from character flaws and faction tensions.</p>
+              <div class="form-group" style="margin-top:12px;">
+                <label>Select Antagonistic Force</label>
+                <select id="conflict-antagonist-select"></select>
+              </div>
+              <div class="form-group">
+                <label>Select Protagonist Vector</label>
+                <select id="conflict-protagonist-select"></select>
+              </div>
+              <button class="btn btn-primary" style="width:100%;" onclick="App.runConflictEngine()">Synthesize Dramatic Clashes</button>
+              <div id="conflict-output" style="margin-top:1rem; padding:12px; background:var(--bg-panel); border-radius:var(--radius-sm); font-size:0.88rem; min-height:80px;">
+                Select entities and click synthesize to compute conflict points.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module F: Structure Builder -->
+        <section id="pane-structure" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module F: Story Structure Builder</h2>
+              <p>Map your narrative onto industry-standard structural architectures.</p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm active" id="btn-struct-three" onclick="App.setStructure('three_act')">Three-Act Structure</button>
+              <button class="btn btn-sm" id="btn-struct-hero" onclick="App.setStructure('hero_journey')">Hero's Journey</button>
+              <button class="btn btn-sm" id="btn-struct-cat" onclick="App.setStructure('save_the_cat')">Save The Cat</button>
+            </div>
+          </div>
+          <div id="structure-beats-container" class="grid-3"></div>
+        </section>
+
+        <!-- Module G: Scene Planner -->
+        <section id="pane-scenes" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module G: Scene Board (Drag & Drop)</h2>
+              <p>Reorder sequence cards across dramatic acts with obstacle-outcome mechanics.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.openSceneModal()">+ Create Scene Card</button>
+          </div>
+          <div class="grid-3" id="scene-board">
+            <div class="scene-column" id="col-act1" ondragover="App.handleDragOver(event)" ondragleave="App.handleDragLeave(event)" ondrop="App.handleDrop(event, 'Act 1')">
+              <div class="card-header">Act 1: Departure / Setup</div>
+              <div class="column-card-list" id="list-act1"></div>
+            </div>
+            <div class="scene-column" id="col-act2" ondragover="App.handleDragOver(event)" ondragleave="App.handleDragLeave(event)" ondrop="App.handleDrop(event, 'Act 2')">
+              <div class="card-header">Act 2: Confrontation / Midpoint</div>
+              <div class="column-card-list" id="list-act2"></div>
+            </div>
+            <div class="scene-column" id="col-act3" ondragover="App.handleDragOver(event)" ondragleave="App.handleDragLeave(event)" ondrop="App.handleDrop(event, 'Act 3')">
+              <div class="card-header">Act 3: Climax & Resolution</div>
+              <div class="column-card-list" id="list-act3"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module H: Timeline View -->
+        <section id="pane-timeline" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module H: Chronological Timeline View</h2>
+              <p>Interactive chronological narrative milestones and parallel story events.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.openTimelineModal()">+ Add Timeline Event</button>
+          </div>
+          <div class="timeline-strip" id="timeline-events-container"></div>
+        </section>
+
+        <!-- Module I: Relationship Graph -->
+        <section id="pane-graph" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module I: Character Relationship Graph</h2>
+              <p>Visual network diagram showing relational affinities, friction, and secrets.</p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm" onclick="App.resizeAndDrawCanvas()">🔄 Redraw Graph</button>
+              <button class="btn btn-sm" onclick="App.openRelationModal()">+ Add Link</button>
+            </div>
+          </div>
+          <div id="relation-canvas-container">
+            <canvas id="relation-canvas"></canvas>
+            <div class="canvas-overlay-legend">
+              Drag nodes to rearrange. Lines: <span style="color:#2a9d8f">Ally</span> | <span style="color:#e63946">Rival</span> | <span style="color:#f4a261">Family</span> | <span style="color:#9d4edd">Secret/Lover</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module J: Consistency Checker -->
+        <section id="pane-consistency" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module J: Consistency & Logic Verifier</h2>
+              <p>Automated static narrative analysis for timeline paradoxes, missing goals, and dangling threads.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.runConsistencyCheck()">Run Deep Audit</button>
+          </div>
+          <div id="consistency-results"></div>
+        </section>
+
+        <!-- Module K: Story Generator -->
+        <section id="pane-generator" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module K: Rule-Based Narrative Assembly Engine</h2>
+              <p>Deterministic story generation via contextual grammars, template slots, and metadata hooks.</p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm" onclick="App.generateEngineOutput('outline')">1. Generate Outline</button>
+              <button class="btn btn-sm" onclick="App.generateEngineOutput('chapters')">2. Chapter Breakdown</button>
+              <button class="btn btn-sm btn-primary" onclick="App.generateEngineOutput('full')">3. Complete Story Draft</button>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span class="tag tag-accent" id="generator-output-tag">Ready for Assembly</span>
+              <button class="btn btn-sm" onclick="App.copyGeneratorText()">📋 Copy to Clipboard</button>
+            </div>
+            <div id="generator-output-display" style="min-height:350px; background:var(--bg-panel); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:1.5rem; white-space:pre-wrap; font-family:var(--font-reading); font-size:1.05rem; line-height:1.7;">
+Click one of the generation buttons above to assemble narrative elements using the deterministic grammar engine.
+            </div>
+          </div>
+        </section>
+
+        <!-- Module Q: Story Variant Engine -->
+        <section id="pane-variants" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module Q: Story Variant & Alternate Endings Engine</h2>
+              <p>Deterministic trajectory variations based on decisive moral inflection points.</p>
+            </div>
+          </div>
+          <div class="btn-group" style="margin-bottom: 1.5rem;">
+            <button class="btn" onclick="App.generateVariant('hero_wins')">🏆 Hero Wins (Triumphant)</button>
+            <button class="btn" onclick="App.generateVariant('villain_wins')">🌑 Villain Wins (Nihilistic)</button>
+            <button class="btn" onclick="App.generateVariant('bittersweet')">🍂 Bittersweet (Pyrrhic)</button>
+            <button class="btn" onclick="App.generateVariant('tragic')">🥀 Tragic Catastrophe</button>
+            <button class="btn" onclick="App.generateVariant('open')">❓ Open Ambiguity</button>
+          </div>
+          <div class="card">
+            <div class="card-header" id="variant-title">Select a Variant Trajectory</div>
+            <div id="variant-text-box" style="white-space:pre-wrap; line-height:1.8; font-family:var(--font-reading); font-size:1.05rem;">
+Select an ending variant button above to compile alternative resolutions from your premise, world rules, and character fatal flaws.
+            </div>
+          </div>
+        </section>
+
+        <!-- Module P: Reading Modes -->
+        <section id="pane-reader" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module P: Reading Room</h2>
+              <p>Immersive formatting styles for proofreading and presentation.</p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm active" id="btn-mode-novel" onclick="App.setReadingMode('novel')">Novel Book</button>
+              <button class="btn btn-sm" id="btn-mode-screenplay" onclick="App.setReadingMode('screenplay')">Screenplay</button>
+              <button class="btn btn-sm" id="btn-mode-children" onclick="App.setReadingMode('children')">Illustrated Tale</button>
+            </div>
+          </div>
+          <div class="reader-sheet reading-mode-novel" id="reader-output"></div>
+        </section>
+
+        <!-- Module L: Research Assistant -->
+        <section id="pane-research" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module L: Research Assistant</h2>
+              <p>Lookup worldbuilding concepts, synonyms, and historical context.</p>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">Wikipedia Concept Lookup</div>
+              <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input type="text" id="wiki-query" placeholder="e.g. Astrolabe, Alchemy, Feudalism">
+                <button class="btn btn-primary" onclick="App.searchWikipedia()">Search</button>
+              </div>
+              <div id="wiki-results" style="max-height:300px; overflow-y:auto; font-size:0.85rem; line-height:1.5;"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">Datamuse Vocabulary & Synonym Finder</div>
+              <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <input type="text" id="synonym-query" placeholder="e.g. Shadows, Betrayal, Clockwork">
+                <button class="btn btn-primary" onclick="App.searchSynonyms()">Find Words</button>
+              </div>
+              <div id="synonym-results" style="max-height:300px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:6px;"></div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:1.5rem;">
+            <div class="card-header">External Web Deep-Search Launchpad</div>
+            <p class="scene-meta" style="margin-bottom:10px;">Quickly jump into targeted historical and geopolitical archives using your story parameters.</p>
+            <div class="btn-group">
+              <button class="btn btn-sm" onclick="App.openSearchQuery('history')">🔍 Research Historical Parallels</button>
+              <button class="btn btn-sm" onclick="App.openSearchQuery('tech')">🔍 Research Tech & Weaponry</button>
+              <button class="btn btn-sm" onclick="App.openSearchQuery('mythology')">🔍 Research Folklore & Myths</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Module M: Analytics Dashboard -->
+        <section id="pane-analytics" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Module M: Analytics & Project Intelligence</h2>
+              <p>Real-time compositional density, character weight, and completion tracking.</p>
+            </div>
+          </div>
+          <div class="grid-4" style="margin-bottom:1.5rem;">
+            <div class="stat-metric-card">
+              <div class="stat-metric-label">Estimated Word Count</div>
+              <div class="stat-metric-value" id="stat-words">0</div>
+              <span class="tag tag-accent" id="stat-words-target">Target: 80,000</span>
+            </div>
+            <div class="stat-metric-card">
+              <div class="stat-metric-label">Scene Units</div>
+              <div class="stat-metric-value" id="stat-scenes">0</div>
+              <span class="tag">Active cards</span>
+            </div>
+            <div class="stat-metric-card">
+              <div class="stat-metric-label">Characters Cast</div>
+              <div class="stat-metric-value" id="stat-characters">0</div>
+              <span class="tag">Registered souls</span>
+            </div>
+            <div class="stat-metric-card">
+              <div class="stat-metric-label">Completion Status</div>
+              <div class="stat-metric-value" id="stat-completion">0%</div>
+              <span class="tag tag-success">Structural health</span>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">Character Screen-Time Balance</div>
+              <div id="analytics-character-bars"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">Narrative Rhythm & Ratio</div>
+              <div id="analytics-rhythm-breakdown" style="font-size:0.9rem; line-height:2;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Modules N & O: Import / Export -->
+        <section id="pane-io" class="stage-pane">
+          <div class="pane-header">
+            <div>
+              <h2>Modules N & O: Export & Import Suite</h2>
+              <p>Export your creative work to professional formats, or load and backup snapshots.</p>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">Module N: Export Story Project</div>
+              <p class="scene-meta" style="margin-bottom:16px;">Download formatted manuscripts and project archives directly to your filesystem.</p>
+              <div class="btn-group" style="flex-direction:column; align-items:stretch; gap:10px;">
+                <button class="btn" onclick="App.exportFile('json')">💾 Export SDS Project File (.json)</button>
+                <button class="btn" onclick="App.exportFile('txt')">📄 Export Story Draft & Bible (.txt)</button>
+                <button class="btn" onclick="App.exportFile('markdown')">📝 Export Formatted Markdown (.md)</button>
+                <button class="btn" onclick="App.exportFile('html')">🌐 Export Standalone Reader (.html)</button>
+                <button class="btn btn-primary" onclick="App.exportFile('docx')">📘 Export Word-Ready Document (.docx)</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">Module O: Import Existing Project</div>
+              <p class="scene-meta" style="margin-bottom:16px;">Load an existing Story Development Studio JSON project file.</p>
+              <input type="file" id="import-file-input" accept=".json" style="margin-bottom:12px;">
+              <button class="btn btn-primary" style="width:100%;" onclick="App.importJSONFile()">Load Project from File</button>
+
+              <hr style="border:0; border-top:1px solid var(--border-color); margin:1.5rem 0;">
+              <div class="card-header">Restore Local Backup Snapshot</div>
+              <div id="backup-list" style="max-height:160px; overflow-y:auto; font-size:0.85rem;"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <div class="modal-backdrop" id="modal-character">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="char-modal-title">Edit Character</h3>
+        <button class="close-btn" onclick="App.closeModals()">✕</button>
+      </div>
+      <input type="hidden" id="char-id">
+      <div class="form-group">
+        <label>Character Name</label>
+        <input type="text" id="char-name" placeholder="e.g. Lyra Vance">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Role</label>
+          <select id="char-role">
+            <option value="Protagonist">Protagonist</option>
+            <option value="Antagonist">Antagonist</option>
+            <option value="Mentor">Mentor</option>
+            <option value="Sidekick / Ally">Sidekick / Ally</option>
+            <option value="Love Interest">Love Interest</option>
+            <option value="Rival">Rival</option>
+            <option value="Foil">Foil</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Archetype / Occupation</label>
+          <input type="text" id="char-archetype" placeholder="e.g. Rogue Chrono-Scholar">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Core Goal (Want)</label>
+        <input type="text" id="char-goal" placeholder="e.g. Unlock the ancestral clockwork vault">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Deepest Fear</label>
+          <input type="text" id="char-fear" placeholder="e.g. Being forgotten like her father">
+        </div>
+        <div class="form-group">
+          <label>Fatal Flaw</label>
+          <input type="text" id="char-flaw" placeholder="e.g. Reckless distrust of authority">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Secret</label>
+        <input type="text" id="char-secret" placeholder="e.g. Stole the core mechanism from the Guild">
+      </div>
+      <div class="form-group">
+        <label>Special Skills & Assets</label>
+        <input type="text" id="char-skills" placeholder="e.g. Lockpicking, Ancient glyph translation">
+      </div>
+      <div class="btn-group" style="justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn" onclick="App.closeModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.saveCharacter()">Save Character</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-scene">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="scene-modal-title">Scene Details</h3>
+        <button class="close-btn" onclick="App.closeModals()">✕</button>
+      </div>
+      <input type="hidden" id="scene-id">
+      <div class="form-group">
+        <label>Scene Title</label>
+        <input type="text" id="scene-title" placeholder="e.g. Infiltration of the Clocktower">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Act Placement</label>
+          <select id="scene-act">
+            <option value="Act 1">Act 1: Setup</option>
+            <option value="Act 2">Act 2: Confrontation</option>
+            <option value="Act 3">Act 3: Resolution</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>POV Character</label>
+          <select id="scene-pov"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Scene Purpose</label>
+        <input type="text" id="scene-purpose" placeholder="e.g. Establish ticking clock and introduce cipher">
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Goal in Scene</label>
+          <input type="text" id="scene-goal" placeholder="e.g. Steal the primary gear">
+        </div>
+        <div class="form-group">
+          <label>Obstacle / Conflict</label>
+          <input type="text" id="scene-obstacle" placeholder="e.g. Sentries patrol the vault">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Outcome / Disaster</label>
+          <input type="text" id="scene-outcome" placeholder="e.g. Escape is successful, but alarm sounds">
+        </div>
+        <div class="form-group">
+          <label>Emotional State (Shift)</label>
+          <input type="text" id="scene-emotion" placeholder="e.g. Anxious -> Victorious yet Terrified">
+        </div>
+      </div>
+      <div class="btn-group" style="justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn" onclick="App.closeModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.saveScene()">Save Scene</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-timeline">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Timeline Event</h3>
+        <button class="close-btn" onclick="App.closeModals()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Time / Date / Chronological Marker</label>
+        <input type="text" id="tl-time" placeholder="e.g. Year 342, Day of Eclipse">
+      </div>
+      <div class="form-group">
+        <label>Event Headline</label>
+        <input type="text" id="tl-headline" placeholder="e.g. The Grand Synapse Rupture">
+      </div>
+      <div class="form-group">
+        <label>Description & Narrative Fallout</label>
+        <textarea id="tl-desc" placeholder="Details of what occurred..."></textarea>
+      </div>
+      <div class="btn-group" style="justify-content: flex-end;">
+        <button class="btn" onclick="App.closeModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.saveTimelineEvent()">Add Event</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-relation">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Connect Characters</h3>
+        <button class="close-btn" onclick="App.closeModals()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Character A</label>
+        <select id="rel-source"></select>
+      </div>
+      <div class="form-group">
+        <label>Character B</label>
+        <select id="rel-target"></select>
+      </div>
+      <div class="form-group">
+        <label>Relationship Dynamic</label>
+        <select id="rel-type">
+          <option value="ally">Allies / Trusted</option>
+          <option value="rival">Rivals / Enemies</option>
+          <option value="family">Kinship / Family</option>
+          <option value="secret">Secret / Lover / Betrayal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Dynamic Description</label>
+        <input type="text" id="rel-desc" placeholder="e.g. Bound by blood oath, torn by competing loyalties">
+      </div>
+      <div class="btn-group" style="justify-content: flex-end;">
+        <button class="btn" onclick="App.closeModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.saveRelationship()">Save Connection</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modal-plot">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Plot Thread / Twist</h3>
+        <button class="close-btn" onclick="App.closeModals()">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Plot Name / Arc Title</label>
+        <input type="text" id="plot-title" placeholder="e.g. Subplot: The Syndicate Informant">
+      </div>
+      <div class="form-group">
+        <label>Plot Type</label>
+        <select id="plot-type">
+          <option value="Main Plot">Main Plot</option>
+          <option value="Subplot">Subplot</option>
+          <option value="Major Twist">Major Twist</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Narrative Description</label>
+        <textarea id="plot-desc" placeholder="Describe progression and catalyst..."></textarea>
+      </div>
+      <div class="btn-group" style="justify-content: flex-end;">
+        <button class="btn" onclick="App.closeModals()">Cancel</button>
+        <button class="btn btn-primary" onclick="App.savePlotThread()">Save Thread</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- ==========================================================================
+       VANILLA JAVASCRIPT APPLICATION CORE
+       ========================================================================== -->
+  <script>
+    const App = (function() {
+      'use strict';
+
+      const STORAGE_KEY = 'SDS_PROJECT_SUBIN_KHULLAR_V2';
+      const BACKUP_KEY = 'SDS_BACKUPS_SUBIN_KHULLAR_V2';
+
+      let state = {
+        meta: {
+          title: "The Clockwork Paradigm",
+          genre: "Science Fiction",
+          audience: "Adult Commercial",
+          tone: "Suspenseful & Urgent",
+          style: "Third-Person Limited (Deep POV)",
+          wordCount: 85000
+        },
+        premise: {
+          logline: "When an exiled chronomancer uncovers an artificial eclipse that erases memories across the floating metropolis of Aethelgard, she must ally with an imperial inquisitor before dawn renders humanity a blank slate.",
+          theme: "The sanctity of memory versus the seductive peace of collective oblivion.",
+          centralQuestion: "Is a painful truth fundamentally more humane than a blissful lie?",
+          stakes: "The total mental reset of three million citizens under the dominion of the Archon."
+        },
+        world: {
+          setting: "Aethelgard, a floating aerial metropolis anchored to basalt peaks.",
+          period: "Post-Aether Reckoning, Year 412",
+          tech: "Atmospheric condensers, galvanic telegraphy, ether-powered brass automatons.",
+          magic: "Chronurgy: The manipulation of localized temporal fields at the expense of human memories.",
+          factions: "The Archon Syndicate (Theocratic rulers), The Hollowed (Underground rebels), Guild of Navigators.",
+          rules: "1. No clockwork construct may simulate a deceased soul.\n2. Aether extraction causes permanent neural decay."
+        },
+        characters: [
+          {
+            id: "c1",
+            name: "Dr. Valerie Cross",
+            role: "Protagonist",
+            archetype: "Disillusioned Chrono-Physicist",
+            goal: "Reactivate the resonance beacon to dispel the artificial eclipse.",
+            fear: "Losing the final memory of her daughter.",
+            flaw: "Obsessive self-reliance; refuses to place faith in others.",
+            secret: "She unknowingly engineered the prototype of the eclipse lens.",
+            skills: "Temporal harmonics, quantum lock-picking, firearm precision"
+          },
+          {
+            id: "c2",
+            name: "Lord Regent Malakor",
+            role: "Antagonist",
+            archetype: "Zealot Autocrat",
+            goal: "Erase the population's recollection of the Grand Civil Massacre.",
+            fear: "Uprising and systemic anarchy destroying Aethelgard.",
+            flaw: "Absolute arrogance; views human consciousness as mere software.",
+            secret: "Suffers from rapid terminal dementia he hides beneath a porcelain mask.",
+            skills: "State manipulation, mental suppression wards, fencing mastery"
+          },
+          {
+            id: "c3",
+            name: "Kaelen Voss",
+            role: "Sidekick / Ally",
+            archetype: "Disavowed Sky-Corsair",
+            goal: "Secure passage and pardons for his stranded crew.",
+            fear: "Being captured and converted into a mindless automaton thrall.",
+            flaw: "Impulsive recklessness driven by survivor's guilt.",
+            secret: "Owes a lethal debt to Malakor's chief enforcer.",
+            skills: "Airship piloting, explosive demolitions, black market contacts"
+          }
+        ],
+        relationships: [
+          { id: "r1", source: "c1", target: "c2", type: "rival", desc: "Former intellectual partners turned mortal ideological enemies" },
+          { id: "r2", source: "c1", target: "c3", type: "ally", desc: "Uneasy alliance born of desperate survival" }
+        ],
+        plots: [
+          { id: "p1", title: "The Impending Eclipse", type: "Main Plot", desc: "The countdown to the midnight eclipse deployment across the five sky sectors." },
+          { id: "p2", title: "Kaelen's Stranded Crew", type: "Subplot", desc: "Rescuing Kaelen's sky-sailors from the prison barges before they are processed." },
+          { id: "p3", title: "The Architect's True Identity", type: "Major Twist", desc: "Valerie realizes her own mentor programmed the fail-safe trigger into her mind." }
+        ],
+        structureType: "three_act",
+        scenes: [
+          {
+            id: "s1",
+            title: "The Static Morning",
+            act: "Act 1",
+            pov: "c1",
+            purpose: "Introduce the decaying status quo and Valerie's memory loss symptoms.",
+            goal: "Calibrate her personal chronometer.",
+            obstacle: "Sudden temporal pulses warp local gravity in the laboratory.",
+            outcome: "She discovers the imperial frequency signature.",
+            emotion: "Frustrated -> Suspicious"
+          },
+          {
+            id: "s2",
+            title: "Ambush at Dock 9",
+            act: "Act 1",
+            pov: "c1",
+            purpose: "Inciting incident; Valerie is targeted by syndicate sentinels.",
+            goal: "Deliver contraband research to her contact.",
+            obstacle: "Enforcers surround the hangar; contact is murdered.",
+            outcome: "Kaelen intervenes with his skiff; they escape into the smog.",
+            emotion: "Terrified -> Desperate resolve"
+          },
+          {
+            id: "s3",
+            title: "Infiltration of the Spire",
+            act: "Act 2",
+            pov: "c1",
+            purpose: "Midpoint clash; attempt to disable the central eclipse lens.",
+            goal: "Upload the counter-cipher into the core mainframe.",
+            obstacle: "Malakor anticipated the route and traps the lower sanctum.",
+            outcome: "Disaster: Kaelen is wounded, and the cipher is corrupted.",
+            emotion: "Determined -> Hopeless anguish"
+          },
+          {
+            id: "s4",
+            title: "The Midnight Dawn",
+            act: "Act 3",
+            pov: "c1",
+            purpose: "Climactic resolution and moral sacrifice.",
+            goal: "Manually align the basalt prism at the summit.",
+            obstacle: "Duels Malakor atop the open hurricane winds of the aerie.",
+            outcome: "Valerie burns her own foundational memory to fuel the beam.",
+            emotion: "Grief-stricken -> Transcendent catharsis"
+          }
+        ],
+        timeline: [
+          { id: "t1", time: "Day 1 - Dawn", headline: "Signal Anomaly Detected", desc: "Valerie registers micro-fluctuations in atmospheric time dilation." },
+          { id: "t2", time: "Day 2 - 18:00", headline: "The Fall of Sector 4", desc: "First test of the eclipse lens wipes memory of seven hundred citizens." },
+          { id: "t3", time: "Day 3 - 23:59", headline: "The Midnight Conjunction", desc: "The scheduled planetary alignment allowing complete imperial mind-blanking." }
+        ],
+        readingMode: "novel"
+      };
+
+      let isDirty = false;
+      let canvasNodes = [];
+      let draggedNode = null;
+      let dragOffset = { x: 0, y: 0 };
+
+      // Progressive Web App: Service Worker Registration
+      function registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./service-worker.js')
+              .then((reg) => {
+                console.log('[PWA] Service Worker registered. Scope:', reg.scope);
+              })
+              .catch((err) => {
+                console.warn('[PWA] Service Worker registration failed:', err);
+              });
+          });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          window.deferredPrompt = e;
+          const installBtn = document.getElementById('install-pwa-btn');
+          if (installBtn) installBtn.style.display = 'inline-flex';
+        });
+      }
+
+      function init() {
+        registerServiceWorker();
+        loadFromStorage();
+        bindEvents();
+        populateAllViews();
+        setupCanvasInteraction();
+        updateAnalytics();
+        markSaved();
+
+        setInterval(() => {
+          if (isDirty) {
+            saveCurrentProject(false);
+          }
+        }, 15000);
+      }
+
+      function loadFromStorage() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            state = Object.assign(state, parsed);
+          }
+        } catch (e) {
+          console.error('Failed to load stored state:', e);
+        }
+      }
+
+      function syncFormToState() {
+        state.meta.title = document.getElementById('meta-title').value;
+        state.meta.genre = document.getElementById('meta-genre').value;
+        state.meta.audience = document.getElementById('meta-audience').value;
+        state.meta.tone = document.getElementById('meta-tone').value;
+        state.meta.style = document.getElementById('meta-style').value;
+        state.meta.wordCount = parseInt(document.getElementById('meta-wordcount').value, 10) || 50000;
+
+        state.premise.logline = document.getElementById('premise-logline').value;
+        state.premise.theme = document.getElementById('premise-theme').value;
+        state.premise.centralQuestion = document.getElementById('premise-question').value;
+        state.premise.stakes = document.getElementById('premise-stakes').value;
+
+        state.world.setting = document.getElementById('world-setting').value;
+        state.world.period = document.getElementById('world-period').value;
+        state.world.tech = document.getElementById('world-tech').value;
+        state.world.magic = document.getElementById('world-magic').value;
+        state.world.factions = document.getElementById('world-factions').value;
+        state.world.rules = document.getElementById('world-rules').value;
+      }
+
+      function saveCurrentProject(notify = true) {
+        syncFormToState();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          markSaved();
+          if (notify) showToast("Project saved locally!");
+          createBackupSnapshot(true);
+        } catch (e) {
+          showToast("Error saving: " + e.message, "danger");
+        }
+      }
+
+      function markDirty() {
+        syncFormToState();
+        isDirty = true;
+        const dot = document.getElementById('save-dot');
+        const lbl = document.getElementById('save-label');
+        if (dot) dot.classList.add('unsaved');
+        if (lbl) lbl.textContent = "Unsaved";
+      }
+
+      function markSaved() {
+        isDirty = false;
+        const dot = document.getElementById('save-dot');
+        const lbl = document.getElementById('save-label');
+        if (dot) dot.classList.remove('unsaved');
+        if (lbl) lbl.textContent = "Saved";
+      }
+
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        if (type === 'danger') toast.style.borderLeftColor = 'var(--danger)';
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(10px)';
+          setTimeout(() => toast.remove(), 300);
+        }, 2800);
+      }
+
+      function populateAllViews() {
+        document.getElementById('meta-title').value = state.meta.title || '';
+        document.getElementById('meta-genre').value = state.meta.genre || 'Science Fiction';
+        document.getElementById('meta-audience').value = state.meta.audience || 'Adult Commercial';
+        document.getElementById('meta-tone').value = state.meta.tone || 'Dark & Gritty';
+        document.getElementById('meta-style').value = state.meta.style || 'Third-Person Limited (Deep POV)';
+        document.getElementById('meta-wordcount').value = state.meta.wordCount || 80000;
+
+        document.getElementById('premise-logline').value = state.premise.logline || '';
+        document.getElementById('premise-theme').value = state.premise.theme || '';
+        document.getElementById('premise-question').value = state.premise.centralQuestion || '';
+        document.getElementById('premise-stakes').value = state.premise.stakes || '';
+
+        document.getElementById('world-setting').value = state.world.setting || '';
+        document.getElementById('world-period').value = state.world.period || '';
+        document.getElementById('world-tech').value = state.world.tech || '';
+        document.getElementById('world-magic').value = state.world.magic || '';
+        document.getElementById('world-factions').value = state.world.factions || '';
+        document.getElementById('world-rules').value = state.world.rules || '';
+
+        renderCharacterList();
+        renderPlotList();
+        renderScenes();
+        renderTimeline();
+        renderStructureBeats();
+        populateDropdowns();
+        renderBackupsList();
+      }
+
+      function getCharacterName(id) {
+        const c = state.characters.find(item => item.id === id);
+        return c ? c.name : 'Unknown';
+      }
+
+      function populateDropdowns() {
+        const charSelects = [
+          document.getElementById('scene-pov'),
+          document.getElementById('conflict-antagonist-select'),
+          document.getElementById('conflict-protagonist-select'),
+          document.getElementById('rel-source'),
+          document.getElementById('rel-target')
+        ];
+
+        charSelects.forEach(select => {
+          if (!select) return;
+          const currentVal = select.value;
+          select.innerHTML = '';
+          state.characters.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = `${c.name} (${c.role})`;
+            select.appendChild(opt);
+          });
+          if (currentVal && state.characters.some(c => c.id === currentVal)) {
+            select.value = currentVal;
+          }
+        });
+      }
+
+      function renderCharacterList() {
+        const container = document.getElementById('character-list');
+        if (!container) return;
+        container.innerHTML = '';
+
+        state.characters.forEach((char) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="card-header">
+              <span>${char.name}</span>
+              <span class="tag tag-accent">${char.role}</span>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;"><em>${char.archetype || 'Archetype undefined'}</em></p>
+            <div style="font-size:0.82rem; margin-bottom:4px;"><strong>Want:</strong> ${char.goal}</div>
+            <div style="font-size:0.82rem; margin-bottom:4px;"><strong>Fear:</strong> ${char.fear}</div>
+            <div style="font-size:0.82rem; margin-bottom:4px;"><strong>Flaw:</strong> ${char.flaw}</div>
+            <div style="font-size:0.82rem; margin-bottom:8px;"><strong>Secret:</strong> ${char.secret}</div>
+            <div class="btn-group" style="margin-top:12px; justify-content:flex-end;">
+              <button class="btn btn-sm" onclick="App.openCharacterModal('${char.id}')">✏️ Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="App.deleteCharacter('${char.id}')">🗑️ Delete</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function openCharacterModal(id = null) {
+        document.getElementById('char-id').value = id || '';
+        document.getElementById('char-modal-title').textContent = id ? 'Edit Character' : 'Add New Character';
+        if (id) {
+          const c = state.characters.find(item => item.id === id);
+          if (c) {
+            document.getElementById('char-name').value = c.name;
+            document.getElementById('char-role').value = c.role;
+            document.getElementById('char-archetype').value = c.archetype || '';
+            document.getElementById('char-goal').value = c.goal || '';
+            document.getElementById('char-fear').value = c.fear || '';
+            document.getElementById('char-flaw').value = c.flaw || '';
+            document.getElementById('char-secret').value = c.secret || '';
+            document.getElementById('char-skills').value = c.skills || '';
+          }
+        } else {
+          document.getElementById('char-name').value = '';
+          document.getElementById('char-role').value = 'Protagonist';
+          document.getElementById('char-archetype').value = '';
+          document.getElementById('char-goal').value = '';
+          document.getElementById('char-fear').value = '';
+          document.getElementById('char-flaw').value = '';
+          document.getElementById('char-secret').value = '';
+          document.getElementById('char-skills').value = '';
+        }
+        document.getElementById('modal-character').classList.add('open');
+      }
+
+      function saveCharacter() {
+        const id = document.getElementById('char-id').value;
+        const name = document.getElementById('char-name').value.trim();
+        if (!name) return alert('Character name is required.');
+
+        const newChar = {
+          id: id || 'c_' + Date.now(),
+          name: name,
+          role: document.getElementById('char-role').value,
+          archetype: document.getElementById('char-archetype').value,
+          goal: document.getElementById('char-goal').value,
+          fear: document.getElementById('char-fear').value,
+          flaw: document.getElementById('char-flaw').value,
+          secret: document.getElementById('char-secret').value,
+          skills: document.getElementById('char-skills').value
+        };
+
+        if (id) {
+          const idx = state.characters.findIndex(c => c.id === id);
+          if (idx !== -1) state.characters[idx] = newChar;
+        } else {
+          state.characters.push(newChar);
+        }
+
+        closeModals();
+        renderCharacterList();
+        populateDropdowns();
+        resizeAndDrawCanvas();
+        updateAnalytics();
+        markDirty();
+        showToast('Character profile saved.');
+      }
+
+      function deleteCharacter(id) {
+        if (!confirm('Are you sure you want to remove this character?')) return;
+        state.characters = state.characters.filter(c => c.id !== id);
+        state.relationships = state.relationships.filter(r => r.source !== id && r.target !== id);
+        renderCharacterList();
+        populateDropdowns();
+        resizeAndDrawCanvas();
+        updateAnalytics();
+        markDirty();
+        showToast('Character removed.');
+      }
+
+      function renderPlotList() {
+        const container = document.getElementById('plot-threads-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        state.plots.forEach(plot => {
+          const item = document.createElement('div');
+          item.style.padding = '10px';
+          item.style.background = 'var(--bg-panel)';
+          item.style.borderRadius = 'var(--radius-sm)';
+          item.style.marginBottom = '8px';
+          item.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <strong>${plot.title}</strong>
+              <span class="tag tag-accent">${plot.type}</span>
+            </div>
+            <p style="font-size:0.84rem; color:var(--text-muted);">${plot.desc}</p>
+            <div style="text-align:right; margin-top:6px;">
+              <button class="btn btn-sm btn-danger" onclick="App.deletePlotThread('${plot.id}')">Delete</button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      function openPlotModal() {
+        document.getElementById('plot-title').value = '';
+        document.getElementById('plot-desc').value = '';
+        document.getElementById('modal-plot').classList.add('open');
+      }
+
+      function savePlotThread() {
+        const title = document.getElementById('plot-title').value.trim();
+        const type = document.getElementById('plot-type').value;
+        const desc = document.getElementById('plot-desc').value.trim();
+        if (!title) return alert('Title required');
+
+        state.plots.push({
+          id: 'p_' + Date.now(),
+          title,
+          type,
+          desc
+        });
+
+        closeModals();
+        renderPlotList();
+        markDirty();
+        showToast('Plot thread added.');
+      }
+
+      function deletePlotThread(id) {
+        state.plots = state.plots.filter(p => p.id !== id);
+        renderPlotList();
+        markDirty();
+      }
+
+      function runConflictEngine() {
+        const antId = document.getElementById('conflict-antagonist-select').value;
+        const proId = document.getElementById('conflict-protagonist-select').value;
+        const out = document.getElementById('conflict-output');
+
+        const pro = state.characters.find(c => c.id === proId);
+        const ant = state.characters.find(c => c.id === antId);
+
+        if (!pro || !ant) {
+          out.innerHTML = '<span style="color:var(--warning)">Please ensure both a Protagonist and Antagonist exist.</span>';
+          return;
+        }
+
+        const firstFaction = (state.world.factions || '').split(',')[0]?.trim() || 'the dominant faction';
+        const firstRule = (state.world.rules || '').split('\n')[0]?.trim() || 'Survival demands absolute obedience';
+
+        const conflictVectors = [
+          `⚡ <strong>Ideological Clash:</strong> ${pro.name}'s objective ("${pro.goal}") directly obstructs ${ant.name}'s ambition ("${ant.goal}").`,
+          `🎯 <strong>Vulnerability Exploitation:</strong> ${ant.name} levers ${pro.name}'s fatal flaw (${pro.flaw}) by triggering their fear: "${pro.fear}".`,
+          `🗝️ <strong>Secret Breach:</strong> If ${ant.name} uncovers ${pro.name}'s secret ("${pro.secret}"), alliances within ${firstFaction} disintegrate.`,
+          `⚔️ <strong>Physical Escalation:</strong> World Law violation ("${firstRule}") forces an unavoidable direct duel in ${state.world.setting || 'the world center'}.`
+        ];
+
+        out.innerHTML = conflictVectors.map(cv => `<div style="margin-bottom:8px;">${cv}</div>`).join('');
+      }
+
+      const STRUCTURAL_MODELS = {
+        three_act: [
+          { name: "Act I: Exposition & Hook", desc: "Introduce Protagonist's ordinary world, status quo, and the ticking clock." },
+          { name: "Act I: Inciting Incident", desc: "A destabilizing event disrupts the balance and challenges the status quo." },
+          { name: "Act I: Plot Point 1", desc: "Protagonist makes a decisive choice to cross the threshold into the unknown." },
+          { name: "Act II: Rising Action", desc: "Encountering tests, gathering allies, meeting antagonistic resistance." },
+          { name: "Act II: The Midpoint", desc: "False victory or catastrophic reveal shifts the stakes from reactive to proactive." },
+          { name: "Act II: All Hope is Lost", desc: "Dark night of the soul. Protagonist's flaw leads to major defeat." },
+          { name: "Act III: Climax", desc: "Final confrontation pitting newly forged resolve directly against the antagonist." },
+          { name: "Act III: Resolution", desc: "The new normal is established; the internal thematic question is answered." }
+        ],
+        hero_journey: [
+          { name: "1. Ordinary World", desc: "The hero's baseline reality." },
+          { name: "2. Call to Adventure", desc: "The disturbance that presents a destiny or imperative." },
+          { name: "3. Refusal of the Call", desc: "Doubt, fear of failure, or obligations holding the hero back." },
+          { name: "4. Meeting the Mentor", desc: "Receiving wisdom, tools, or insight necessary for the journey." },
+          { name: "5. Crossing the Threshold", desc: "Stepping irrevocably into the unknown arena." },
+          { name: "6. Tests, Allies & Enemies", desc: "Navigating the rules and factions of the new arena." },
+          { name: "7. The Ordeal", desc: "Facing death or their deepest fear; thematic rebirth." },
+          { name: "8. Return with the Elixir", desc: "Returning transformed with the power to heal their world." }
+        ],
+        save_the_cat: [
+          { name: "Opening Image & Theme Stated", desc: "Snapshot of the hero's broken reality and the moral lesson." },
+          { name: "Set-Up & Catalyst", desc: "Building the world before an explosive life-changing catalyst hits." },
+          { name: "Debate & Break into Two", desc: "Can I really do this? Taking the proactive leap forward." },
+          { name: "B Story & Fun and Games", desc: "The promise of the premise; relationship subplot exploration." },
+          { name: "Midpoint & Bad Guys Close In", desc: "Stakes raised; false safety crumbles as internal pressures spike." },
+          { name: "All Is Lost & Dark Night", desc: "A whiff of death; the old self dies so the truth can triumph." },
+          { name: "Finale: Five-Point Execution", desc: "Executing a transformed strategy to defeat evil." },
+          { name: "Final Image", desc: "Visual mirror opposite showing how radically the hero transformed." }
+        ]
+      };
+
+      function setStructure(type) {
+        state.structureType = type;
+        document.querySelectorAll('#pane-structure .btn-group .btn').forEach(b => b.classList.remove('active'));
+        if (type === 'three_act') document.getElementById('btn-struct-three').classList.add('active');
+        if (type === 'hero_journey') document.getElementById('btn-struct-hero').classList.add('active');
+        if (type === 'save_the_cat') document.getElementById('btn-struct-cat').classList.add('active');
+        renderStructureBeats();
+        markDirty();
+      }
+
+      function renderStructureBeats() {
+        const container = document.getElementById('structure-beats-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const beats = STRUCTURAL_MODELS[state.structureType] || STRUCTURAL_MODELS.three_act;
+        beats.forEach((b, idx) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="card-header">
+              <span>${b.name}</span>
+              <span class="tag">Step ${idx + 1}</span>
+            </div>
+            <p style="font-size:0.86rem; color:var(--text-muted);">${b.desc}</p>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function renderScenes() {
+        const acts = ['Act 1', 'Act 2', 'Act 3'];
+        acts.forEach(act => {
+          const colId = act === 'Act 1' ? 'list-act1' : act === 'Act 2' ? 'list-act2' : 'list-act3';
+          const container = document.getElementById(colId);
+          if (!container) return;
+          container.innerHTML = '';
+
+          const actScenes = state.scenes.filter(s => s.act === act);
+          actScenes.forEach(scene => {
+            const card = document.createElement('div');
+            card.className = 'scene-card';
+            card.draggable = true;
+            card.dataset.id = scene.id;
+            card.ondragstart = (e) => {
+              e.dataTransfer.setData('text/plain', scene.id);
+              card.classList.add('dragging');
+            };
+            card.ondragend = () => card.classList.remove('dragging');
+
+            const povName = getCharacterName(scene.pov);
+
+            card.innerHTML = `
+              <div class="scene-card-header">
+                <strong>${scene.title}</strong>
+                <span class="tag tag-accent">${povName}</span>
+              </div>
+              <div class="scene-meta">🎯 <strong>Goal:</strong> ${scene.goal}</div>
+              <div class="scene-meta">🚧 <strong>Obstacle:</strong> ${scene.obstacle}</div>
+              <div class="scene-meta">💥 <strong>Outcome:</strong> ${scene.outcome}</div>
+              <div class="scene-meta">🎭 <em>${scene.emotion}</em></div>
+              <div class="btn-group" style="justify-content:flex-end; margin-top:8px;">
+                <button class="btn btn-sm" onclick="App.openSceneModal('${scene.id}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="App.deleteScene('${scene.id}')">✕</button>
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        });
+      }
+
+      function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+      }
+
+      function handleDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+      }
+
+      function handleDrop(e, targetAct) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        const sceneId = e.dataTransfer.getData('text/plain');
+        if (!sceneId) return;
+
+        const scene = state.scenes.find(s => s.id === sceneId);
+        if (scene && scene.act !== targetAct) {
+          scene.act = targetAct;
+          renderScenes();
+          markDirty();
+          showToast(`Scene moved to ${targetAct}`);
+        }
+      }
+
+      function openSceneModal(id = null) {
+        document.getElementById('scene-id').value = id || '';
+        document.getElementById('scene-modal-title').textContent = id ? 'Edit Scene Card' : 'Create Scene Card';
+        populateDropdowns();
+
+        if (id) {
+          const s = state.scenes.find(item => item.id === id);
+          if (s) {
+            document.getElementById('scene-title').value = s.title;
+            document.getElementById('scene-act').value = s.act;
+            document.getElementById('scene-pov').value = s.pov;
+            document.getElementById('scene-purpose').value = s.purpose;
+            document.getElementById('scene-goal').value = s.goal;
+            document.getElementById('scene-obstacle').value = s.obstacle;
+            document.getElementById('scene-outcome').value = s.outcome;
+            document.getElementById('scene-emotion').value = s.emotion;
+          }
+        } else {
+          document.getElementById('scene-title').value = '';
+          document.getElementById('scene-act').value = 'Act 1';
+          document.getElementById('scene-purpose').value = '';
+          document.getElementById('scene-goal').value = '';
+          document.getElementById('scene-obstacle').value = '';
+          document.getElementById('scene-outcome').value = '';
+          document.getElementById('scene-emotion').value = '';
+        }
+        document.getElementById('modal-scene').classList.add('open');
+      }
+
+      function saveScene() {
+        const id = document.getElementById('scene-id').value;
+        const title = document.getElementById('scene-title').value.trim();
+        if (!title) return alert('Scene title required');
+
+        const povSelect = document.getElementById('scene-pov');
+        const povVal = povSelect.value;
+
+        const sceneData = {
+          id: id || 's_' + Date.now(),
+          title,
+          act: document.getElementById('scene-act').value,
+          pov: povVal,
+          purpose: document.getElementById('scene-purpose').value,
+          goal: document.getElementById('scene-goal').value,
+          obstacle: document.getElementById('scene-obstacle').value,
+          outcome: document.getElementById('scene-outcome').value,
+          emotion: document.getElementById('scene-emotion').value
+        };
+
+        if (id) {
+          const idx = state.scenes.findIndex(s => s.id === id);
+          if (idx !== -1) state.scenes[idx] = sceneData;
+        } else {
+          state.scenes.push(sceneData);
+        }
+
+        closeModals();
+        renderScenes();
+        updateAnalytics();
+        markDirty();
+        showToast('Scene card saved.');
+      }
+
+      function deleteScene(id) {
+        state.scenes = state.scenes.filter(s => s.id !== id);
+        renderScenes();
+        updateAnalytics();
+        markDirty();
+      }
+
+      function renderTimeline() {
+        const container = document.getElementById('timeline-events-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        state.timeline.forEach(event => {
+          const node = document.createElement('div');
+          node.className = 'timeline-node';
+          node.innerHTML = `
+            <div class="timeline-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span class="tag tag-accent">${event.time}</span>
+                <button class="btn btn-sm btn-danger" onclick="App.deleteTimelineEvent('${event.id}')">✕</button>
+              </div>
+              <strong style="display:block; font-size:1rem; margin-bottom:4px;">${event.headline}</strong>
+              <p style="font-size:0.86rem; color:var(--text-muted);">${event.desc}</p>
+            </div>
+          `;
+          container.appendChild(node);
+        });
+      }
+
+      function openTimelineModal() {
+        document.getElementById('tl-time').value = '';
+        document.getElementById('tl-headline').value = '';
+        document.getElementById('tl-desc').value = '';
+        document.getElementById('modal-timeline').classList.add('open');
+      }
+
+      function saveTimelineEvent() {
+        const time = document.getElementById('tl-time').value.trim();
+        const headline = document.getElementById('tl-headline').value.trim();
+        const desc = document.getElementById('tl-desc').value.trim();
+        if (!headline) return alert('Headline required');
+
+        state.timeline.push({
+          id: 't_' + Date.now(),
+          time: time || 'Unspecified era',
+          headline,
+          desc
+        });
+
+        closeModals();
+        renderTimeline();
+        markDirty();
+        showToast('Timeline event registered.');
+      }
+
+      function deleteTimelineEvent(id) {
+        state.timeline = state.timeline.filter(t => t.id !== id);
+        renderTimeline();
+        markDirty();
+      }
+
+      function setupCanvasInteraction() {
+        const canvas = document.getElementById('relation-canvas');
+        if (!canvas) return;
+
+        window.addEventListener('resize', resizeAndDrawCanvas);
+
+        canvas.addEventListener('mousedown', (e) => {
+          const rect = canvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+
+          for (let i = canvasNodes.length - 1; i >= 0; i--) {
+            const node = canvasNodes[i];
+            const dist = Math.hypot(node.x - mx, node.y - my);
+            if (dist < node.radius) {
+              draggedNode = node;
+              dragOffset.x = mx - node.x;
+              dragOffset.y = my - node.y;
+              break;
+            }
+          }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!draggedNode) return;
+          const rect = canvas.getBoundingClientRect();
+          draggedNode.x = Math.max(30, Math.min(canvas.width - 30, e.clientX - rect.left - dragOffset.x));
+          draggedNode.y = Math.max(30, Math.min(canvas.height - 30, e.clientY - rect.top - dragOffset.y));
+          drawGraph(canvas);
+        });
+
+        window.addEventListener('mouseup', () => {
+          draggedNode = null;
+        });
+      }
+
+      function resizeAndDrawCanvas() {
+        const canvas = document.getElementById('relation-canvas');
+        if (!canvas || !canvas.parentElement) return;
+
+        const rect = canvas.parentElement.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+        }
+
+        const count = state.characters.length;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.max(40, Math.min(centerX, centerY) * 0.65);
+
+        canvasNodes = state.characters.map((char, idx) => {
+          const existing = canvasNodes.find(n => n.id === char.id);
+          if (existing) {
+            existing.name = char.name;
+            existing.role = char.role;
+            return existing;
+          }
+          const angle = (idx / Math.max(count, 1)) * 2 * Math.PI;
+          return {
+            id: char.id,
+            name: char.name,
+            role: char.role,
+            x: centerX + radius * Math.cos(angle),
+            y: centerY + radius * Math.sin(angle),
+            radius: 28
+          };
+        });
+
+        drawGraph(canvas);
+      }
+
+      function drawGraph(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        state.relationships.forEach(rel => {
+          const sourceNode = canvasNodes.find(n => n.id === rel.source);
+          const targetNode = canvasNodes.find(n => n.id === rel.target);
+          if (!sourceNode || !targetNode) return;
+
+          ctx.beginPath();
+          ctx.moveTo(sourceNode.x, sourceNode.y);
+          ctx.lineTo(targetNode.x, targetNode.y);
+
+          let strokeColor = '#2a9d8f';
+          if (rel.type === 'rival') strokeColor = '#e63946';
+          if (rel.type === 'family') strokeColor = '#f4a261';
+          if (rel.type === 'secret') strokeColor = '#9d4edd';
+
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([4, 2]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          const midX = (sourceNode.x + targetNode.x) / 2;
+          const midY = (sourceNode.y + targetNode.y) / 2;
+          ctx.fillStyle = '#1e1e24';
+          ctx.fillRect(midX - 25, midY - 10, 50, 18);
+          ctx.strokeStyle = strokeColor;
+          ctx.strokeRect(midX - 25, midY - 10, 50, 18);
+
+          ctx.font = '10px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(rel.type.toUpperCase(), midX, midY + 3);
+        });
+
+        canvasNodes.forEach(node => {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+          ctx.fillStyle = node.role === 'Protagonist' ? '#d4af37' : node.role === 'Antagonist' ? '#e63946' : '#37374a';
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.font = 'bold 11px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(node.name.split(' ')[0], node.x, node.y + 4);
+        });
+      }
+
+      function openRelationModal() {
+        populateDropdowns();
+        document.getElementById('modal-relation').classList.add('open');
+      }
+
+      function saveRelationship() {
+        const source = document.getElementById('rel-source').value;
+        const target = document.getElementById('rel-target').value;
+        const type = document.getElementById('rel-type').value;
+        const desc = document.getElementById('rel-desc').value;
+
+        if (!source || !target || source === target) {
+          alert('Select two distinct characters.');
+          return;
+        }
+
+        state.relationships.push({
+          id: 'r_' + Date.now(),
+          source,
+          target,
+          type,
+          desc
+        });
+
+        closeModals();
+        resizeAndDrawCanvas();
+        markDirty();
+        showToast('Relationship vector bound.');
+      }
+
+      function runConsistencyCheck() {
+        const out = document.getElementById('consistency-results');
+        if (!out) return;
+        out.innerHTML = '';
+        const issues = [];
+
+        state.characters.forEach(c => {
+          if (!c.goal || c.goal.trim().length < 5) {
+            issues.push({ type: 'warning', text: `Character <strong>${c.name}</strong> lacks a clearly defined Want/Goal.` });
+          }
+          if (!c.flaw || c.flaw.trim().length < 4) {
+            issues.push({ type: 'error', text: `Character <strong>${c.name}</strong> lacks a fatal flaw to drive internal conflict.` });
+          }
+        });
+
+        const act1Count = state.scenes.filter(s => s.act === 'Act 1').length;
+        const act2Count = state.scenes.filter(s => s.act === 'Act 2').length;
+        const act3Count = state.scenes.filter(s => s.act === 'Act 3').length;
+
+        if (act1Count === 0 || act2Count === 0 || act3Count === 0) {
+          issues.push({ type: 'error', text: `Structural gap: At least one Act has zero scene cards configured.` });
+        } else if (act2Count < act1Count) {
+          issues.push({ type: 'warning', text: `Act II is structurally light. Act II typically contains twice the narrative density of Act I.` });
+        }
+
+        if (state.plots.length > 0 && state.scenes.length < state.plots.length) {
+          issues.push({ type: 'warning', text: `You have ${state.plots.length} plot threads, but only ${state.scenes.length} scene cards. Some plots may remain unresolved.` });
+        }
+
+        const hasPro = state.characters.some(c => c.role === 'Protagonist');
+        const hasAnt = state.characters.some(c => c.role === 'Antagonist');
+        if (!hasPro) issues.push({ type: 'error', text: 'No character is designated with the Protagonist role.' });
+        if (!hasAnt) issues.push({ type: 'warning', text: 'No character is designated with the Antagonist role.' });
+
+        if (issues.length === 0) {
+          out.innerHTML = `
+            <div class="issue-item good">
+              <span style="font-size:1.4rem;">✅</span>
+              <div>
+                <strong>Narrative Engine Verification Passed!</strong>
+                <p>All registered characters have active goals and flaws, the 3-act pacing is balanced, and structural integrity is intact.</p>
+              </div>
+            </div>
+          `;
+        } else {
+          issues.forEach(iss => {
+            const div = document.createElement('div');
+            div.className = `issue-item ${iss.type}`;
+            div.innerHTML = `
+              <span style="font-size:1.3rem;">${iss.type === 'error' ? '⚠️' : '⚡'}</span>
+              <div><div>${iss.text}</div></div>
+            `;
+            out.appendChild(div);
+          });
+        }
+      }
+
+      function generateEngineOutput(type) {
+        syncFormToState();
+        const display = document.getElementById('generator-output-display');
+        const tag = document.getElementById('generator-output-tag');
+
+        const pro = state.characters.find(c => c.role === 'Protagonist') || state.characters[0] || { name: "The Protagonist", goal: "survive", flaw: "pride", fear: "ruin", secret: "none" };
+        const ant = state.characters.find(c => c.role === 'Antagonist') || state.characters[1] || { name: "The Antagonist", goal: "conquest", fear: "weakness" };
+        const ally = state.characters.find(c => c.role === 'Sidekick / Ally' || c.role === 'Mentor') || { name: "A loyal confidant" };
+
+        if (type === 'outline') {
+          tag.textContent = 'Structured Outline';
+          display.textContent = compileStructuredOutline(pro, ant, ally);
+        } else if (type === 'chapters') {
+          tag.textContent = 'Detailed Chapter Breakdown';
+          display.textContent = compileChapterPlan(pro, ant, ally);
+        } else {
+          tag.textContent = 'Complete Narrative Draft';
+          display.textContent = compileFullStoryText(pro, ant, ally);
+        }
+      }
+
+      function compileStructuredOutline(pro, ant, ally) {
+        const firstRule = (state.world.rules || '').split('\n')[0]?.trim() || 'Survival at all costs';
+        return `STORY OUTLINE: ${state.meta.title.toUpperCase()}
+Genre: ${state.meta.genre} | Tone: ${state.meta.tone}
+Thematic Core: ${state.premise.theme}
+
+ACT I: THE STATUS QUO & RUPTURE
+• Setting: Commences in ${state.world.setting}, in the era known as ${state.world.period}.
+• Protagonist: ${pro.name} pursues their core drive: ${pro.goal}.
+• Inciting Disturbance: ${state.premise.logline}
+• Threshold Crossing: Hindered by flaw (${pro.flaw}), ${pro.name} allies with ${ally.name}.
+
+ACT II: ESCALATION & MIDPOINT CRISIS
+• Opposition: ${ant.name} mobilizes their power to enact: ${ant.goal}.
+• World Pressure: The law of this world (${firstRule}) takes an immediate toll.
+• The Midpoint Pivot: A clash reveals that ${pro.name}'s fear (${pro.fear}) is directly targeted.
+• All Is Lost: Betrayal fractures the alliance, testing thematic resolve.
+
+ACT III: CLIMAX & EQUILIBRIUM
+• Gathering Forces: ${pro.name} confronts the Central Question: "${state.premise.centralQuestion}".
+• Showdown: Direct confrontation between ${pro.name} and ${ant.name}.
+• Resolution: Stakes resolved (${state.premise.stakes}).`;
+      }
+
+      function compileChapterPlan(pro, ant, ally) {
+        const firstFaction = (state.world.factions || '').split(',')[0]?.trim() || 'the guilds';
+        const magicSys = (state.world.magic || '').split(':')[0]?.trim() || 'the power system';
+        return `DETAILED CHAPTER BLUEPRINT: ${state.meta.title}
+
+CHAPTER 1: THE CRACKED HORIZON
+• Focus: Introduce ${pro.name} in ${state.world.setting}.
+• Internal Hook: ${pro.name}'s want: "${pro.goal}", crippled by ${pro.flaw}.
+• Atmosphere: Grounded in ${state.world.tech}.
+
+CHAPTER 2: ECHOES IN THE SMOKE
+• Focus: ${ant.name}'s faction expands control.
+• Conflict: ${pro.name} conceals their secret: "${pro.secret}".
+• Pivot: Swift extraction aided by ${ally.name}.
+
+CHAPTER 3: THE FACTION'S PRICE
+• Focus: Navigating the sanctum of ${firstFaction}.
+• Peril: Unintended reaction from ${magicSys}.
+• Escalation: Direct offensive prepared against ${ant.name}.
+
+CHAPTER 4: THE MIDPOINT MIRROR
+• Focus: Infiltration collapses under counter-intelligence.
+• Reversal: ${ant.name} forces ${pro.name} to confront "${pro.fear}".
+• Fallout: The objective is lost; ${ally.name} is incapacitated.
+
+CHAPTER 5: THE CRUCIBLE
+• Focus: The darkest hour. ${pro.name} discards their protective flaw (${pro.flaw}).
+• Revelation: Thematic breakthrough answering: "${state.premise.centralQuestion}".
+
+CHAPTER 6: THE CELESTIAL BREACH
+• Focus: Decisive summit clash facing stakes: ${state.premise.stakes}.
+• Climax: Moral and physical duel between ${pro.name} and ${ant.name}.
+• Denouement: Equilibrium achieved across ${state.world.setting}.`;
+      }
+
+      function compileFullStoryText(pro, ant, ally) {
+        const firstFaction = (state.world.factions || '').split(',')[0]?.trim() || 'the Syndicate';
+        const firstRule = (state.world.rules || '').split('\n')[0]?.trim() || 'No pact may be broken without sacrifice.';
+        const magicWord = (state.world.magic || '').split(':')[0]?.trim() || 'arcane resonance';
+
+        return `${state.meta.title.toUpperCase()}
+A ${state.meta.genre} Narrative in the ${state.meta.tone} Voice
+
+PART I: THE COLD EQUATION
+
+The dawn did not break over ${state.world.setting} with warmth; it fractured along the horizon like brittle obsidian. In the era of ${state.world.period}, peace was merely the interval between catastrophes.
+
+${pro.name} watched the condensation bead along the brass housings of the instruments. Every calculation was bound to a singular imperative: to ${pro.goal.toLowerCase()}. Yet, every step was haunted by that deep flaw—${pro.flaw.toLowerCase()}—which had already extracted a heavy price.
+
+"If the frequency shifts by another half-span," muttered ${ally.name}, stepping from the corridor with soot-stained knuckles, "there won't be enough left of the sector to salvage."
+
+"Then we hold the line," ${pro.name} replied, keeping quiet the secret that burned like phosphorous: ${pro.secret}.
+
+Outside, the reality was already decaying. The decree had come from ${firstFaction}, backed by the cold calculus of ${ant.name}. Rumors spread through the lower districts that the ancient law was breached: ${firstRule}.
+
+
+PART II: THE CONFLICT DEEPENS
+
+The confrontation at the transit terminal was neither noble nor clean. When ${ant.name}'s automatons breached the outer perimeter, the air grew thick with the ozone scent of ${magicWord}.
+
+"You cling to dust, ${pro.name}!" ${ant.name}'s voice echoed through the iron corridors, laced with the conviction of one whose goal was to ${ant.goal.toLowerCase()}. "You fight to preserve memories that are already rotting. Oblivion is mercy!"
+
+For a harrowing instant, ${pro.name} hesitated. The terror struck directly at their deepest fear: ${pro.fear.toLowerCase()}. If the archives failed, ${state.premise.stakes.toLowerCase()}.
+
+
+PART III: THE CRUCIBLE & RESOLUTION
+
+It was at the summit of the grand conduit that the final choice was struck. To overcome the adversary, ${pro.name} surrendered the stubborn shield of ${pro.flaw.toLowerCase()}.
+
+With a deafening shriek of shearing metal, the primary valve was thrown. The power grid of ${state.world.setting} surged, blinding and absolute. ${ant.name} lunged forward, but the counter-measure was already irreversible. The thematic equation was finally answered: ${state.premise.centralQuestion}—answered not in theories, but in the heat of human resolve.
+
+When the dust settled, silence returned. The city was scarred, but its people remained the authors of their own dawn.`;
+      }
+
+      function copyGeneratorText() {
+        const text = document.getElementById('generator-output-display').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Draft copied to clipboard!');
+        });
+      }
+
+      function generateVariant(variantType) {
+        syncFormToState();
+        const box = document.getElementById('variant-text-box');
+        const title = document.getElementById('variant-title');
+
+        const pro = state.characters.find(c => c.role === 'Protagonist') || { name: "The Hero", flaw: "pride", goal: "save the world" };
+        const ant = state.characters.find(c => c.role === 'Antagonist') || { name: "The Nemesis", goal: "total domination" };
+
+        if (variantType === 'hero_wins') {
+          title.textContent = 'Variant Outcome: Triumphant Victory (Hero Prevails)';
+          box.textContent = `TRAJECTORY: THE RESTORATION OF DAWN\n\nConfronting their flaw (${pro.flaw}) at the critical turning point, ${pro.name} executes a decisive counter-measure against ${ant.name}'s plan to ${ant.goal}.\n\nThe high stakes (${state.premise.stakes}) are neutralized. A new dawn breaks over ${state.world.setting}, confirming the thematic truth: ${state.premise.theme}.`;
+        } else if (variantType === 'villain_wins') {
+          title.textContent = 'Variant Outcome: Nihilistic Eclipse (Villain Triumphs)';
+          box.textContent = `TRAJECTORY: THE REIGN OF THE ARCHON\n\nAt the crucial juncture, ${pro.name}'s fatal flaw (${pro.flaw}) causes hesitation. ${ant.name} exploits their deepest fear ("${pro.fear}") and takes control.\n\nThe catastrophe occurs: ${state.premise.stakes}. ${ant.name} establishes uncontested dominion over ${state.world.setting}.`;
+        } else if (variantType === 'bittersweet') {
+          title.textContent = 'Variant Outcome: Bittersweet (Pyrrhic Victory)';
+          box.textContent = `TRAJECTORY: THE EXPENSIVE DAWN\n\n${ant.name}'s plot is broken, but victory demands the total sacrifice of ${pro.name}'s deepest secret. ${state.world.setting} survives, yet ${pro.name} walks into exile, forever marked by the price of peace.`;
+        } else if (variantType === 'tragic') {
+          title.textContent = 'Variant Outcome: Classical Tragic Catastrophe';
+          box.textContent = `TRAJECTORY: THE HUBRIS COLLAPSE\n\nAttempting to escape their dreaded fear ("${pro.fear}"), ${pro.name} accidentally triggers the forbidden fail-safe of ${state.world.magic || 'the world rules'}.\n\nBoth ${pro.name} and ${ant.name} fall in the ensuing blast, leaving the ruins of ${state.world.setting} to history.`;
+        } else if (variantType === 'open') {
+          title.textContent = 'Variant Outcome: Open Ambiguity';
+          box.textContent = `TRAJECTORY: THE SUSPENDED RESOLUTION\n\nThe story concludes precisely as the countdown reaches zero. As ${ant.name} and ${pro.name} reach for the master switch, the narrative cuts to black—leaving the central question ringing: "${state.premise.centralQuestion}".`;
+        }
+      }
+
+      function setReadingMode(mode) {
+        state.readingMode = mode;
+        const reader = document.getElementById('reader-output');
+        reader.className = `reader-sheet reading-mode-${mode}`;
+
+        document.querySelectorAll('#pane-reader .btn-group .btn').forEach(b => b.classList.remove('active'));
+        if (mode === 'novel') document.getElementById('btn-mode-novel').classList.add('active');
+        if (mode === 'screenplay') document.getElementById('btn-mode-screenplay').classList.add('active');
+        if (mode === 'children') document.getElementById('btn-mode-children').classList.add('active');
+
+        renderReadingRoom();
+      }
+
+      function renderReadingRoom() {
+        const reader = document.getElementById('reader-output');
+        const pro = state.characters.find(c => c.role === 'Protagonist') || { name: "Valerie" };
+        const ant = state.characters.find(c => c.role === 'Antagonist') || { name: "Malakor" };
+
+        if (state.readingMode === 'novel') {
+          reader.innerHTML = `
+            <h1>${state.meta.title}</h1>
+            <div style="text-align:center; color:var(--text-muted); margin-bottom:2rem;">A Novel of ${state.meta.genre}</div>
+            <h2>Chapter I: The Basalt Frontier</h2>
+            <p>The dawn broke over ${state.world.setting} not with warmth, but with the cold, deliberate click of iron gears. ${pro.name} tightened the straps of the travel kit, feeling the persistent tremor in their fingers.</p>
+            <p>"If the signal degrades past the third harmonic," ${pro.name} whispered into the speaking-tube, "there will be nothing left of the sector to remember."</p>
+            <p>Across the chasm, the spires of the city cast long shadows. The stakes were no longer theoretical: ${state.premise.stakes}.</p>
+          `;
+        } else if (state.readingMode === 'screenplay') {
+          reader.innerHTML = `
+            <div class="slugline">EXT. ${state.world.setting.toUpperCase()} - DAWN</div>
+            <div class="action">Perpetual mist swirls through towering steam vents. Massive bronze dials rotate sluggishly along the skyline. Galvanic charges crackle overhead.</div>
+            
+            <div class="slugline">INT. OBSERVATORY - CONTINUOUS</div>
+            <div class="action">${pro.name.toUpperCase()} (sharp-eyed, exhausted) calibrates a glowing quartz lens with trembling hands.</div>
+            
+            <div class="character-cue">${pro.name.toUpperCase()}</div>
+            <div class="parenthetical">(checking the pressure needle)</div>
+            <div class="dialogue">The alignment is drifting. If Malakor fires the pulse before the quadrant locks, the memory grid will fry.</div>
+            
+            <div class="action">A heavy metallic THUD shakes the outer door.</div>
+            
+            <div class="character-cue">${ant.name.toUpperCase()} (O.S.)</div>
+            <div class="dialogue">You always were obsessed with preserving what was meant to be forgotten.</div>
+          `;
+        } else if (state.readingMode === 'children') {
+          reader.innerHTML = `
+            <h1>The Little Airship and the Big Cloud!</h1>
+            <p>Once upon a time, high up in the floating land of ${state.world.setting}, lived a brave tinkerer named ${pro.name}!</p>
+            <p>🌟 "BEEP BEEP!" went the brass clockwork birds. 🌟</p>
+            <p>Every morning, ${pro.name} loved to solve giant puzzles. But a grumpy storm sent by ${ant.name} was trying to hide all the happy memories away!</p>
+            <p>"Don't you worry!" said ${pro.name} with a smile. "As long as we stick together, no cloud can hide our sunshine!"</p>
+          `;
+        }
+      }
+
+      function searchWikipedia() {
+        const query = document.getElementById('wiki-query').value.trim();
+        const resultsBox = document.getElementById('wiki-results');
+        if (!query) return;
+
+        resultsBox.innerHTML = '<span style="color:var(--text-muted);">Consulting encyclopedia archives...</span>';
+
+        fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`)
+          .then(res => res.json())
+          .then(data => {
+            const hits = data.query ? data.query.search : [];
+            if (hits.length === 0) {
+              resultsBox.innerHTML = '<span style="color:var(--warning);">No concept matches found.</span>';
+              return;
+            }
+            resultsBox.innerHTML = hits.slice(0, 4).map(h => `
+              <div style="margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                <strong style="color:var(--accent); font-size:0.92rem;">${h.title}</strong>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">${h.snippet.replace(/<span class="searchmatch">/g, '<strong>').replace(/<\/span>/g, '</strong>')}...</p>
+              </div>
+            `).join('');
+          })
+          .catch(() => {
+            resultsBox.innerHTML = `<span style="color:var(--danger);">Offline or Network Blocked. Try again with an active internet connection.</span>`;
+          });
+      }
+
+      function searchSynonyms() {
+        const query = document.getElementById('synonym-query').value.trim();
+        const resultsBox = document.getElementById('synonym-results');
+        if (!query) return;
+
+        resultsBox.innerHTML = '<span style="color:var(--text-muted);">Finding evocative words...</span>';
+
+        fetch(`https://api.datamuse.com/words?ml=${encodeURIComponent(query)}&max=20`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data || data.length === 0) {
+              resultsBox.innerHTML = '<span style="color:var(--warning);">No lexicon matches found.</span>';
+              return;
+            }
+            resultsBox.innerHTML = data.map(item => `
+              <span class="tag tag-accent" style="cursor:pointer;" onclick="navigator.clipboard.writeText('${item.word}'); App.showToast('Copied: ${item.word}');">${item.word}</span>
+            `).join('');
+          })
+          .catch(() => {
+            resultsBox.innerHTML = `<span style="color:var(--danger);">Offline or Network Blocked.</span>`;
+          });
+      }
+
+      function openSearchQuery(category) {
+        let q = '';
+        if (category === 'history') q = `${state.world.period || ''} historical parallels culture`;
+        if (category === 'tech') q = `${state.world.tech || ''} mechanics science`;
+        if (category === 'mythology') q = `${state.meta.genre || ''} mythology archetype folklore`;
+
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(q.trim())}`, '_blank');
+      }
+
+      function updateAnalytics() {
+        const wordsEl = document.getElementById('stat-words');
+        const scenesEl = document.getElementById('stat-scenes');
+        const charsEl = document.getElementById('stat-characters');
+        const completionEl = document.getElementById('stat-completion');
+        const targetEl = document.getElementById('stat-words-target');
+
+        const estWordCount = state.scenes.length * 1850;
+        if (wordsEl) wordsEl.textContent = estWordCount.toLocaleString();
+        if (targetEl) targetEl.textContent = `Target: ${(state.meta.wordCount || 80000).toLocaleString()}`;
+        if (scenesEl) scenesEl.textContent = state.scenes.length;
+        if (charsEl) charsEl.textContent = state.characters.length;
+
+        let score = 0;
+        if (state.meta.title) score += 10;
+        if (state.premise.logline) score += 15;
+        if (state.world.setting) score += 15;
+        if (state.characters.length >= 2) score += 20;
+        if (state.scenes.length >= 4) score += 25;
+        if (state.timeline.length >= 2) score += 15;
+        if (completionEl) completionEl.textContent = `${score}%`;
+
+        const barBox = document.getElementById('analytics-character-bars');
+        if (barBox) {
+          barBox.innerHTML = state.characters.map(c => {
+            const scenesCount = state.scenes.filter(s => s.pov === c.id || s.pov === c.name).length;
+            const pct = state.scenes.length ? Math.round((scenesCount / state.scenes.length) * 100) : 0;
+            return `
+              <div style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:3px;">
+                  <span>${c.name} (${c.role})</span>
+                  <span>${scenesCount} scenes (${pct}%)</span>
+                </div>
+                <div style="background:var(--bg-panel); height:8px; border-radius:4px; overflow:hidden;">
+                  <div style="background:var(--accent); width:${pct}%; height:100%;"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        const rhythmBox = document.getElementById('analytics-rhythm-breakdown');
+        if (rhythmBox) {
+          const act1 = state.scenes.filter(s => s.act === 'Act 1').length;
+          const act2 = state.scenes.filter(s => s.act === 'Act 2').length;
+          const act3 = state.scenes.filter(s => s.act === 'Act 3').length;
+          rhythmBox.innerHTML = `
+            <div><strong>Act 1 Setup:</strong> ${act1} scene cards (${state.scenes.length ? Math.round((act1/state.scenes.length)*100) : 0}%)</div>
+            <div><strong>Act 2 Confrontation:</strong> ${act2} scene cards (${state.scenes.length ? Math.round((act2/state.scenes.length)*100) : 0}%)</div>
+            <div><strong>Act 3 Climax:</strong> ${act3} scene cards (${state.scenes.length ? Math.round((act3/state.scenes.length)*100) : 0}%)</div>
+            <div><strong>Dialogue vs Action Ratio:</strong> ~ 45% Dialogue / 55% Exposition</div>
+          `;
+        }
+      }
+
+      function exportFile(format) {
+        syncFormToState();
+        const filename = (state.meta.title || 'story_project').toLowerCase().replace(/\s+/g, '_');
+        let content = '';
+        let mime = 'text/plain;charset=utf-8';
+        let ext = format;
+
+        const pro = state.characters.find(c => c.role === 'Protagonist') || state.characters[0] || { name: 'Protagonist', goal: '', flaw: '', secret: '', fear: '' };
+        const ant = state.characters.find(c => c.role === 'Antagonist') || state.characters[1] || { name: 'Antagonist', goal: '' };
+        const ally = state.characters.find(c => c.role === 'Sidekick / Ally') || state.characters[2] || { name: 'Ally' };
+
+        if (format === 'json') {
+          content = JSON.stringify(state, null, 2);
+          mime = 'application/json;charset=utf-8';
+        } else if (format === 'txt') {
+          content = compileFullStoryText(pro, ant, ally);
+        } else if (format === 'markdown') {
+          ext = 'md';
+          mime = 'text/markdown;charset=utf-8';
+          content = `# ${state.meta.title}\n\n**Genre:** ${state.meta.genre} | **Theme:** ${state.premise.theme}\n\n## Premise\n${state.premise.logline}\n\n## Characters\n${state.characters.map(c => `- **${c.name}** (${c.role}): ${c.goal}`).join('\n')}\n\n## Manuscript Draft\n${compileFullStoryText(pro, ant, ally)}`;
+        } else if (format === 'html') {
+          mime = 'text/html;charset=utf-8';
+          content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${state.meta.title}</title><style>body{font-family:Georgia,serif;max-width:750px;margin:3rem auto;padding:1rem;line-height:1.8;color:#222;}</style></head><body><h1>${state.meta.title}</h1><h3>${state.meta.genre}</h3><hr><p>${compileFullStoryText(pro, ant, ally).replace(/\n\n/g, '</p><p>')}</p></body></html>`;
+        } else if (format === 'docx') {
+          ext = 'doc';
+          mime = 'application/msword;charset=utf-8';
+          content = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+          <head><meta charset='utf-8'><title>${state.meta.title}</title>
+          <style>body{font-family:'Times New Roman',serif; font-size:12pt; line-height:2.0;}</style></head>
+          <body><h1>${state.meta.title}</h1><p><strong>Genre:</strong> ${state.meta.genre}</p><p>${compileFullStoryText(pro, ant, ally).replace(/\n/g, '<br>')}</p></body></html>`;
+        }
+
+        const blob = new Blob(['\ufeff' + content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Exported as .${ext}`);
+      }
+
+      function importJSONFile() {
+        const fileInput = document.getElementById('import-file-input');
+        if (!fileInput.files || fileInput.files.length === 0) {
+          alert('Please choose a .json project file to import.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.meta && imported.characters) {
+              state = imported;
+              populateAllViews();
+              updateAnalytics();
+              saveCurrentProject(true);
+              showToast('Project imported successfully!');
+            } else {
+              throw new Error('Invalid Story Development Studio format.');
+            }
+          } catch (err) {
+            alert('Import failed: ' + err.message);
+          }
+        };
+        reader.readAsText(fileInput.files[0]);
+      }
+
+      function createBackupSnapshot(silent = false) {
+        try {
+          const raw = localStorage.getItem(BACKUP_KEY);
+          let backups = raw ? JSON.parse(raw) : [];
+          backups.unshift({
+            time: new Date().toLocaleTimeString(),
+            title: state.meta.title || 'Untitled',
+            data: JSON.stringify(state)
+          });
+          if (backups.length > 5) backups = backups.slice(0, 5);
+          localStorage.setItem(BACKUP_KEY, JSON.stringify(backups));
+          renderBackupsList();
+          if (!silent) showToast('Local snapshot created.');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function renderBackupsList() {
+        const list = document.getElementById('backup-list');
+        if (!list) return;
+        const raw = localStorage.getItem(BACKUP_KEY);
+        const backups = raw ? JSON.parse(raw) : [];
+        if (backups.length === 0) {
+          list.innerHTML = '<span style="color:var(--text-dim);">No stored snapshots.</span>';
+          return;
+        }
+        list.innerHTML = backups.map((b, idx) => `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; background:var(--bg-panel); padding:6px 10px; border-radius:var(--radius-sm);">
+            <span><strong>${b.title}</strong> (${b.time})</span>
+            <button class="btn btn-sm" onclick="App.restoreBackup(${idx})">Restore</button>
+          </div>
+        `).join('');
+      }
+
+      function restoreBackup(idx) {
+        if (!confirm('Restore this snapshot? Current unsaved work will be overwritten.')) return;
+        const raw = localStorage.getItem(BACKUP_KEY);
+        const backups = raw ? JSON.parse(raw) : [];
+        if (backups[idx]) {
+          state = JSON.parse(backups[idx].data);
+          populateAllViews();
+          updateAnalytics();
+          saveCurrentProject(true);
+          showToast('Snapshot restored.');
+        }
+      }
+
+      function bindEvents() {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            switchPane(btn.dataset.pane);
+          });
+        });
+
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        if (toggleSidebarBtn) {
+          toggleSidebarBtn.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768) {
+              sidebar.classList.toggle('mobile-open');
+            } else {
+              sidebar.classList.toggle('collapsed');
+            }
+          });
+        }
+
+        const themeBtn = document.getElementById('theme-toggle-btn');
+        if (themeBtn) {
+          themeBtn.addEventListener('click', () => {
+            const current = document.body.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', target);
+            resizeAndDrawCanvas();
+          });
+        }
+
+        const backupBtn = document.getElementById('backup-btn');
+        if (backupBtn) {
+          backupBtn.addEventListener('click', () => createBackupSnapshot(false));
+        }
+
+        const installBtn = document.getElementById('install-pwa-btn');
+        if (installBtn) {
+          installBtn.addEventListener('click', () => {
+            if (window.deferredPrompt) {
+              window.deferredPrompt.prompt();
+              window.deferredPrompt.userChoice.then(() => {
+                window.deferredPrompt = null;
+                installBtn.style.display = 'none';
+              });
+            }
+          });
+        }
+
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+          el.addEventListener('input', markDirty);
+        });
+      }
+
+      function switchPane(paneId) {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.querySelector(`.nav-btn[data-pane="${paneId}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        document.querySelectorAll('.stage-pane').forEach(p => p.classList.remove('active'));
+        const targetPane = document.getElementById(paneId);
+        if (targetPane) targetPane.classList.add('active');
+
+        if (paneId === 'pane-graph') {
+          setTimeout(resizeAndDrawCanvas, 50);
+        } else if (paneId === 'pane-reader') {
+          renderReadingRoom();
+        } else if (paneId === 'pane-analytics') {
+          updateAnalytics();
+        }
+
+        if (window.innerWidth <= 768) {
+          document.getElementById('sidebar').classList.remove('mobile-open');
+        }
+      }
+
+      function closeModals() {
+        document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+      }
+
+      return {
+        init,
+        saveCurrentProject,
+        openCharacterModal,
+        saveCharacter,
+        deleteCharacter,
+        openPlotModal,
+        savePlotThread,
+        deletePlotThread,
+        runConflictEngine,
+        setStructure,
+        handleDragOver,
+        handleDragLeave,
+        handleDrop,
+        openSceneModal,
+        saveScene,
+        deleteScene,
+        openTimelineModal,
+        saveTimelineEvent,
+        deleteTimelineEvent,
+        resizeAndDrawCanvas,
+        openRelationModal,
+        saveRelationship,
+        runConsistencyCheck,
+        generateEngineOutput,
+        generateVariant,
+        setReadingMode,
+        searchWikipedia,
+        searchSynonyms,
+        openSearchQuery,
+        exportFile,
+        importJSONFile,
+        restoreBackup,
+        copyGeneratorText,
+        closeModals,
+        showToast
+      };
+    })();
+
+    window.addEventListener('DOMContentLoaded', App.init);
+  </script>
+</body>
+</html>
+
