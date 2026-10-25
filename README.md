@@ -173,90 +173,341 @@ Format generated drafts or custom prose across three distinct layouts:
 
 ## 🚀 Installation & Quick Start
 
-Story Development Studio requires **no build tools, compilers, or npm dependencies**.
+**Story Development Studio** requires **no build tools, compilers, package managers, or npm dependencies**.
 
 ### Local Setup
-1. Clone or download this repository:
-   ```bash
-   git clone https://github.com/your-username/story-development-studio.git
-   cd story-development-studio
-Verify the three files reside in the same root directory:
-code
-Code
+
+#### 1. Clone or Download the Repository
+
+```bash
+git clone https://github.com/your-username/story-development-studio.git
+cd story-development-studio
+```
+
+#### 2. Verify Project Structure
+
+Ensure the following files exist in the project root:
+
+```text
+story-development-studio/
 ├── index.html
 ├── manifest.json
 └── service-worker.js
-Because browsers block Service Workers on the file:/// protocol, run a local web server:
-Using Python 3:
-code
-Bash
+```
+
+#### 3. Launch a Local Web Server
+
+Because modern browsers do not allow Service Workers to run via the `file:///` protocol, the application must be served through a local web server.
+
+##### Option A: Python 3
+
+```bash
 python3 -m http.server 8080
-Using Node.js (npx):
-code
-Bash
+```
+
+##### Option B: Node.js (NPX)
+
+```bash
 npx serve .
-Using VS Code:
-Right-click index.html and select "Open with Live Server".
-Open your browser and navigate to:
-code
-Code
+```
+
+##### Option C: Visual Studio Code
+
+1. Install the **Live Server** extension.
+2. Right-click `index.html`.
+3. Select **Open with Live Server**.
+
+#### 4. Open the Application
+
+Navigate to:
+
+```text
 http://localhost:8080
-Installing as a Desktop or Mobile PWA
-Desktop (Google Chrome / Microsoft Edge / Brave):
-Click the "📥 Install App" button in the top navigation bar, or click the install icon in your browser's address bar.
-iOS (Safari):
-Tap the Share button 
-→
-→
- Select "Add to Home Screen".
-Android (Chrome):
-Tap the menu icon (⋮) 
-→
-→
- Select "Install app" or "Add to Home screen".
-Once installed, the app launches in its own distraction-free window and functions completely offline.
-🗺️ User Guide: Recommended Workflow
-Follow this step-by-step path to develop a project from blank page to complete outline:
-code
-Code
-[1. Metadata & Premise] ──► [2. World Rules] ──► [3. Cast Characters]
-                                                       │
-[6. Consistency Audit] ◄── [5. Scene Board] ◄── [4. Map Beats]
-         │
-         ▼
-[7. Assemble Story] ────► [8. Select Variant] ─► [9. Export DOCX/MD]
-Establish the North Star: Navigate to Metadata and Premise. Define the central moral question, theme, and consequences of failure.
-Build the Arena: Open World Builder. Enter the physical laws, technology level, and at least one taboo or rule of your world.
-Populate the Cast: Go to Character Manager. Create at least one Protagonist and one Antagonist. Ensure every character has both a Goal (Want) and a Fatal Flaw.
-Link the Network: Open Relationship Graph. Connect your characters with dynamic links (e.g., Rival, Ally, Secret) to visualize tensions.
-Formulate Plot Friction: Head to Plot & Conflict Engine. Run the conflict synthesizer to see how character flaws collide with world laws.
-Plan the Sequence: Choose your structure in Structure Frameworks, then populate the Scene Board. Drag and drop scene cards between Acts 1, 2, and 3.
-Run Quality Assurance: Click Consistency Checker 
-→
-→
- Run Deep Audit to catch missing motivations, dangling plots, or act pacing issues.
-Synthesize Drafts: Open Narrative Generator to compile an outline, chapter breakdown, or full story draft.
-Explore What-Ifs: Visit the Variant Engine to evaluate alternate endings (Hero Wins, Villain Wins, Bittersweet, Tragic, Open).
-Export: Go to Import / Export Suite and export your project as .docx for word processing or .json to safeguard your data.
-📂 Repository Structure
-code
-Code
+```
+
+---
+
+## 📲 Installing as a Desktop or Mobile PWA
+
+### Desktop (Chrome, Edge, Brave)
+
+- Click the **📥 Install App** button in the navigation bar.
+- Alternatively, click the **Install** icon in the browser address bar.
+
+### iOS (Safari)
+
+1. Tap the **Share** button.
+2. Select **Add to Home Screen**.
+
+### Android (Chrome)
+
+1. Open the browser menu (**⋮**).
+2. Tap **Install App** or **Add to Home Screen**.
+
+Once installed, the application launches in its own standalone window and works completely offline.
+
+---
+
+# 🗺️ Recommended Workflow
+
+Follow this workflow to move from a blank project to a completed story.
+
+```text
+[1. Metadata & Premise]
+            │
+            ▼
+[2. World Rules]
+            │
+            ▼
+[3. Cast Characters]
+            │
+            ▼
+[4. Map Beats]
+            │
+            ▼
+[5. Scene Board]
+            │
+            ▼
+[6. Consistency Audit]
+            │
+            ▼
+[7. Assemble Story]
+            │
+            ▼
+[8. Select Variant]
+            │
+            ▼
+[9. Export DOCX / Markdown / JSON]
+```
+
+### 1. Establish the North Star
+
+Navigate to **Metadata & Premise** and define:
+
+- Core story idea
+- Theme
+- Moral question
+- Stakes
+- Consequences of failure
+
+### 2. Build the Arena
+
+Open **World Builder** and define:
+
+- Physical laws
+- Technology level
+- Social structures
+- Cultures
+- Magic systems (if applicable)
+- World rules and taboos
+
+### 3. Populate the Cast
+
+In **Character Manager**, create:
+
+- Protagonist
+- Antagonist
+- Supporting characters
+
+Each character should have:
+
+- Goal (Want)
+- Need
+- Fatal flaw
+- Fear
+- Motivation
+
+### 4. Link the Network
+
+Use the **Relationship Graph** to connect characters through:
+
+- Allies
+- Rivals
+- Family
+- Enemies
+- Secrets
+- Mentors
+
+This visualization helps expose tensions and opportunities for conflict.
+
+### 5. Formulate Plot Friction
+
+Open the **Plot & Conflict Engine** and generate:
+
+- Character conflicts
+- World conflicts
+- Stakes escalation
+- Internal struggles
+
+### 6. Plan the Sequence
+
+Choose a framework:
+
+- Three Act Structure
+- Hero's Journey
+- Save the Cat
+
+Populate the **Scene Board** and drag scenes into their appropriate acts.
+
+### 7. Run Quality Assurance
+
+Open **Consistency Checker** and run:
+
+**Deep Audit**
+
+Checks include:
+
+- Missing motivations
+- Character inconsistencies
+- Unresolved plot threads
+- Timeline conflicts
+- Pacing issues
+
+### 8. Synthesize Drafts
+
+Use the **Narrative Generator** to create:
+
+- Story outline
+- Chapter breakdown
+- Complete draft
+
+### 9. Explore Alternatives
+
+Open the **Variant Engine** and generate:
+
+- Hero Wins
+- Villain Wins
+- Bittersweet Ending
+- Tragic Ending
+- Open Ending
+
+### 10. Export Project
+
+Use the **Import / Export Suite** to export:
+
+- DOCX
+- Markdown
+- HTML
+- TXT
+- JSON
+
+JSON exports serve as project backups and can be re-imported later.
+
+---
+
+# 📂 Repository Structure
+
+```text
 story-development-studio/
-├── index.html           # Core application: UI, styling, and JavaScript engine
-├── manifest.json        # W3C Web App Manifest for PWA installation
-├── service-worker.js    # Cache-first service worker for complete offline functionality
-└── README.md            # Project documentation and user manual
-🌐 Browser Compatibility
-Browser	Minimum Version	Offline / PWA Support
-Google Chrome	80+	✅ Supported
-Microsoft Edge	80+	✅ Supported
-Mozilla Firefox	85+	✅ Supported (Desktop offline cache)
-Apple Safari (macOS / iOS)	14+	✅ Supported ("Add to Home Screen")
-Brave / Chromium derivatives	80+	✅ Supported
-👤 Author & Credits
-Story Development Studio was conceptualized and developed by Subin Khullar.
-Author: Subin Khullar
-Philosophy: Privacy-first, deterministic software engineering for the creative arts.
-Contributions: Issues, ideas, and feature requests are welcome via GitHub Pull Requests.
-📄 License
-This project is open-source and licensed under the MIT License. You are free to use, modify, and distribute this software for personal and commercial creative writing projects.
+├── index.html
+│   └── Core application UI, styling, and JavaScript engine
+│
+├── manifest.json
+│   └── W3C Web App Manifest for PWA installation
+│
+├── service-worker.js
+│   └── Cache-first PWA service worker enabling offline support
+│
+└── README.md
+    └── Project documentation and user guide
+```
+
+---
+
+# 🌐 Browser Compatibility
+
+| Browser | Minimum Version | Offline / PWA Support |
+|----------|----------|----------|
+| Google Chrome | 80+ | ✅ Supported |
+| Microsoft Edge | 80+ | ✅ Supported |
+| Mozilla Firefox | 85+ | ✅ Supported |
+| Safari (macOS / iOS) | 14+ | ✅ Supported |
+| Brave | 80+ | ✅ Supported |
+| Other Chromium Browsers | 80+ | ✅ Supported |
+
+---
+
+# ✨ Key Features
+
+### Story Development
+
+- Story Metadata Manager
+- Premise & Theme Builder
+- World Builder
+- Character Manager
+- Relationship Graph
+- Plot & Conflict Engine
+- Structure Frameworks
+- Scene Board
+- Timeline Management
+
+### Narrative Generation
+
+- Story Outline Generation
+- Chapter Breakdown Generation
+- Full Story Assembly
+- Alternate Story Versions
+- Multiple Ending Variations
+
+### Analysis & Validation
+
+- Consistency Checker
+- Timeline Validation
+- Character Validation
+- Plot Thread Detection
+- Story Analytics Dashboard
+
+### Productivity
+
+- Drag-and-Drop Scene Planning
+- Autosave
+- Rolling Backups
+- Offline Editing
+- Import / Export Tools
+
+### PWA Features
+
+- Installable Application
+- Offline First
+- Local Storage Persistence
+- Service Worker Caching
+- Responsive Desktop & Mobile Experience
+
+---
+
+# 👤 Author
+
+**Subin Khullar**
+
+Principal Consultant • Patent Professional • Author • Builder of Creative and Productivity Tools
+
+---
+
+# 🤝 Contributing
+
+Contributions, bug reports, feature suggestions, and pull requests are welcome.
+
+If you discover an issue or have an idea for improvement:
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your changes.
+4. Submit a Pull Request.
+
+---
+
+# 📄 License
+
+This project is licensed under the **MIT License**.
+
+You are free to:
+
+- ✅ Use
+- ✅ Modify
+- ✅ Distribute
+- ✅ Use commercially
+- ✅ Create derivative works
+
+Subject to the terms of the MIT License.
+
+See the [LICENSE](LICENSE) file for full details.
